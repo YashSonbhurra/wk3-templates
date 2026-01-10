@@ -1,53 +1,208 @@
 {{#Reading_Whitelist}}
-<span id="level">1</span>
+<span id="level" style="display: none;">1</span>
+<span id="wk-link" style="display: none;">🔗</span>
 <div id="question-display">{{Characters}}</div>
 <div id="question-name"></div>
-<div class="input">{{type:card_id}}</div>
+<div class="input" style="position: relative;">
+    <div id="toast"></div>
+    {{type:card_id}}
+</div>
 
-<!-- Level indicator -->
+<!-- Global Helper Functions -->
 <script>
-var level = `{{Tags}}`.match(/Lesson_(\d+)/)[1];
-document.getElementById("level").innerHTML = level;
+function openWK(type, term) {
+  const urlTerm = term.toLowerCase().replace(' ', '-');
+  window.open(`https://wanikani.com/${type}/${urlTerm}/`);
+}
+
+let toastTimeout;
+function showToast(message, stay = false) {
+  const toast = document.getElementById('toast');
+  if (toast) {
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toast.innerText = message;
+    toast.classList.add('show');
+    if (!stay) toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+}
+
+function triggerAnkiSubmit() {
+  const enterEvent = new KeyboardEvent('keydown', {
+    bubbles: true,
+    cancelable: true,
+    key: 'Enter',
+    code: 'Enter',
+    keyCode: 13
+  });
+  document.getElementById('typeans').dispatchEvent(enterEvent);
+
+  if (typeof pycmd !== 'undefined') pycmd('ans');
+}
 </script>
 
-<!-- Kana input -->
+<!-- Level indicator & WK Link -->
+<script>
+{
+  const level = `{{Tags}}`.match(/Lesson_(\d+)/)[1];
+  document.getElementById('level').innerHTML = level;
+
+  const link = document.getElementById('wk-link');
+  let type = `{{Card_Type}}`.toLowerCase();
+  if (type === 'radical') type += 's';
+  if (type === 'kana_vocabulary') type = 'vocabulary';
+  const word = (type === 'radicals') ? `{{Meaning}}` : `{{Characters}}`;
+  link.addEventListener('click', () => openWK(type, word));
+}
+</script>
+
+<!-- Kana input & Custom Input Field -->
 <script src="_wanakana.min.js"></script>
 <script>
-var answerDiv = document.getElementById("typeans");
-if (answerDiv !== null) {
-	answerDiv.setAttribute("placeholder", "Enter " + `{{Card}}`);
-	if (`{{Card}}` !== "Meaning") {
-		wanakana.bind(answerDiv);
-		answerDiv.style.fontFamily = "Hiragino Kaku Gothic Pro W3";
-	}
+{
+  const typeans = document.getElementById('typeans');
+  if (typeans) {
+    typeans.style.position = 'absolute';
+    typeans.style.opacity = '0';
+    typeans.style.pointerEvents = 'none';
+    typeans.style.height = '0';
+    typeans.style.width = '0';
+    typeans.tabIndex = -1;
+
+    const mainInput = document.createElement('input');
+    mainInput.setAttribute('type', 'text');
+    mainInput.setAttribute('id', 'main-input');
+    mainInput.setAttribute('placeholder', 'kana');
+    mainInput.setAttribute('enterkeyhint', 'enter');
+    mainInput.classList.add('type-input');
+    typeans.parentNode.insertBefore(mainInput, typeans);
+
+    mainInput.addEventListener('input', () => {
+      const toast = document.getElementById('toast');
+      toast.classList.remove('show');
+
+      if (`{{Card}}` === 'Meaning') {
+        sessionStorage.setItem('mainAnswer', mainInput.value);
+      } else {
+        const hiraganaInput = wanakana.toHiragana(mainInput.value + ' ', { IMEMode: true }).trim();
+        sessionStorage.setItem('mainAnswer', hiraganaInput);
+      }
+    });
+
+    mainInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.keyCode === 13) {
+        ev.preventDefault();
+
+        if (`{{Card}}` === 'Reading') {
+          const input = (sessionStorage.getItem('mainAnswer') || '').trim();
+          mainInput.value = input;
+          const whitelist = `{{Reading_Whitelist}}`.split(',').map(item => item.trim()).filter(Boolean);
+
+          if (`{{Card_Type}}` === 'Kanji') {
+            const onyomiReading = `{{Reading_Onyomi}}`;
+            const kunyomiReading = `{{Reading_Kunyomi}}`;
+            const nanoriReading = `{{Reading_Nanori}}`;
+
+            let wantedReading = 'On\'yomi';
+            let otherReading = `${kunyomiReading},${nanoriReading}`;
+            if (kunyomiReading.startsWith('<reading>')) {
+              wantedReading = 'Kun\'yomi';
+              otherReading = `${onyomiReading},${nanoriReading}`;
+            }
+            if (nanoriReading.startsWith('<reading>')) {
+              wantedReading = 'Nanori';
+              otherReading = `${onyomiReading},${kunyomiReading}`;
+            }
+
+            const otherReadingsList = otherReading.split(',')
+              .map(item => item.trim())
+              .filter(Boolean);
+
+            if (input && !whitelist.includes(input) && otherReadingsList.includes(input)) {
+              showToast(`WK3 is looking for the ${wantedReading} reading.`);
+              return;
+            }
+          } else if (`{{Card_Type}}` === 'Vocabulary' && `{{Characters}}`.length === 1) {
+            const componentReadings = `{{Components_Reading}}`.split(',')
+              .map(item => item.trim())
+              .filter(Boolean);
+            if (input && !whitelist.includes(input) && componentReadings.includes(input)) {
+              showToast(`WK3 is looking for the Vocabulary reading.`);
+              return;
+            }
+          }
+        }
+
+        const optionalInput = document.getElementById('optional-input');
+        if (optionalInput) optionalInput.focus();
+        else triggerAnkiSubmit();
+      }
+    });
+
+    if (`{{Card}}` === 'Reading') {
+      wanakana.bind(mainInput);
+      mainInput.style.fontFamily = 'Hiragino Kaku Gothic Pro W3';
+      mainInput.setAttribute('placeholder', 'かな');
+      mainInput.lang = 'ja';
+    }
+    setTimeout(() => mainInput.focus(), 0);
+  }
+}
+</script>
+
+<!-- Add optional meaning input -->
+<script>
+{
+  if (`{{Card}}` === 'Reading' && (`{{Card_Type}}` === 'Kanji' || `{{Card_Type}}` === 'Vocabulary')) {
+    const typeans = document.getElementById('typeans');
+    if (typeans) {
+      const optionalInput = document.createElement('input');
+      optionalInput.setAttribute('type', 'text');
+      optionalInput.setAttribute('id', 'optional-input');
+      optionalInput.setAttribute('placeholder', 'kana');
+      optionalInput.setAttribute('enterkeyhint', 'enter');
+      optionalInput.classList.add('type-input');
+      typeans.parentNode.insertBefore(optionalInput, typeans);
+
+      optionalInput.addEventListener('input', () => {
+        sessionStorage.setItem('optionalAnswer', optionalInput.value);
+      });
+
+      optionalInput.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.keyCode === 13) {
+          ev.preventDefault();
+          triggerAnkiSubmit();
+        }
+      });
+    }
+  }
 }
 </script>
 
 <script>
-var questionName = "{{Card}}";
-if ("{{Card_Type}}" === "Radical") {
-	questionName = "Name";
-}
+{
+  let questionName = `{{Card}}`;
+  if (`{{Card_Type}}` === 'Radical') questionName = 'Name';
 
-var questionNameDiv = document.getElementById("question-name");
-questionNameDiv.innerHTML = "{{Card_Type}} <b>" + questionName + "</b>";
-var questionDisplayDiv = document.getElementById("question-display");
+  const questionNameDiv = document.getElementById('question-name');
+  questionNameDiv.innerHTML = `{{Card_Type}} <b>${questionName}</b>`;
+  const questionDisplayDiv = document.getElementById('question-display');
 
-if ("{{Card_Type}}" == "Radical") {
-	questionDisplayDiv.classList.add("radical");
-} else if ("{{Card_Type}}" == "Kanji") {
-	questionDisplayDiv.classList.add("kanji");
-} else if ("{{Card_Type}}" == "Vocabulary") {
-	questionDisplayDiv.classList.add("vocabulary");
-} else if ("{{Card_Type}}" == "Kana_Vocabulary") {
-	questionDisplayDiv.classList.add("kana-vocabulary");
-	questionNameDiv.innerHTML = "Vocabulary <b>" + questionName + "</b>";
-}
+  if (`{{Card_Type}}` === 'Radical') {
+    questionDisplayDiv.classList.add('radical');
+  } else if (`{{Card_Type}}` === 'Kanji') {
+    questionDisplayDiv.classList.add('kanji');
+  } else if (`{{Card_Type}}` === 'Vocabulary') {
+    questionDisplayDiv.classList.add('vocabulary');
+  } else if (`{{Card_Type}}` === 'Kana_Vocabulary') {
+    questionDisplayDiv.classList.add('kana-vocabulary');
+    questionNameDiv.innerHTML = `Vocabulary <b>${questionName}</b>`;
+  }
 
-if ("{{Card}}" === "Meaning") {
-	questionNameDiv.classList.add("meaning");
-} else if ("{{Card}}" === "Reading") {
-	questionNameDiv.classList.add("reading");
+  if (`{{Card}}` === 'Meaning') {
+    questionNameDiv.classList.add('meaning');
+  } else if (`{{Card}}` === 'Reading') {
+    questionNameDiv.classList.add('reading');
+  }
 }
 </script>
 {{/Reading_Whitelist}}
