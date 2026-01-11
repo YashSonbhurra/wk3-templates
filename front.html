@@ -15,14 +15,14 @@ function openWK(type, term) {
   window.open(`https://wanikani.com/${type}/${urlTerm}/`);
 }
 
-let toastTimeout;
+window.toastTimeout = null;
 function showToast(message, stay = false) {
   const toast = document.getElementById('toast');
   if (toast) {
-    if (toastTimeout) clearTimeout(toastTimeout);
+    if (window.toastTimeout) clearTimeout(window.toastTimeout);
     toast.innerText = message;
     toast.classList.add('show');
-    if (!stay) toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    if (!stay) window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
   }
 }
 
@@ -95,7 +95,9 @@ function triggerAnkiSubmit() {
         if (`{{Card}}` === 'Reading') {
           const input = (sessionStorage.getItem('mainAnswer') || '').trim();
           mainInput.value = input;
-          const whitelist = `{{Reading_Whitelist}}`.split(',').map(item => item.trim()).filter(Boolean);
+          const whitelist = `{{Reading_Whitelist}}`.split(',')
+            .map(item => item.trim())
+            .filter(Boolean);
 
           if (`{{Card_Type}}` === 'Kanji') {
             const onyomiReading = `{{Reading_Onyomi}}`;
@@ -117,7 +119,7 @@ function triggerAnkiSubmit() {
               .map(item => item.trim())
               .filter(Boolean);
 
-            if (input && !whitelist.includes(input) && otherReadingsList.includes(input)) {
+            if (!whitelist.includes(input) && otherReadingsList.includes(input)) {
               showToast(`WK3 is looking for the ${wantedReading} reading.`);
               return;
             }
@@ -125,7 +127,7 @@ function triggerAnkiSubmit() {
             const componentReadings = `{{Components_Reading}}`.split(',')
               .map(item => item.trim())
               .filter(Boolean);
-            if (input && !whitelist.includes(input) && componentReadings.includes(input)) {
+            if (!whitelist.includes(input) && componentReadings.includes(input)) {
               showToast(`WK3 is looking for the Vocabulary reading.`);
               return;
             }
