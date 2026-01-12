@@ -1,5 +1,5 @@
 {{#Reading_Whitelist}}
-<span id="level" style="display: none;">1</span>
+<span id="level">1</span>
 <span id="wk-link" style="display: none;">🔗</span>
 <div id="question-display">{{Characters}}</div>
 <div id="question-name"></div>
@@ -10,6 +10,16 @@
 
 <!-- Global Helper Functions -->
 <script>
+window.preferences = {
+  toastDuration: 3000,
+  autoPlayAudio: 'Female',
+  hideLevelInFront: true,
+  meaningPlaceholder: 'kana',
+  readingPlaceholder: 'かな',
+  allowMultipleAnswers: true,
+  combineMeaningWithReading: true
+};
+
 function openWK(type, term) {
   const urlTerm = term.toLowerCase().replace(' ', '-');
   window.open(`https://wanikani.com/${type}/${urlTerm}/`);
@@ -22,7 +32,7 @@ function showToast(message, stay = false) {
     if (window.toastTimeout) clearTimeout(window.toastTimeout);
     toast.innerText = message;
     toast.classList.add('show');
-    if (!stay) window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    if (!stay) window.toastTimeout = setTimeout(() => toast.classList.remove('show'), window.preferences.toastDuration || 3000);
   }
 }
 
@@ -44,7 +54,9 @@ function triggerAnkiSubmit() {
 <script>
 {
   const level = `{{Tags}}`.match(/Lesson_(\d+)/)[1];
-  document.getElementById('level').innerHTML = level;
+  const levelElement = document.getElementById('level');
+  levelElement.innerHTML = level;
+  if (window.preferences.hideLevelInFront) levelElement.style.display = 'none';
 
   const link = document.getElementById('wk-link');
   let type = `{{Card_Type}}`.toLowerCase();
@@ -71,7 +83,7 @@ function triggerAnkiSubmit() {
     const mainInput = document.createElement('input');
     mainInput.setAttribute('type', 'text');
     mainInput.setAttribute('id', 'main-input');
-    mainInput.setAttribute('placeholder', 'kana');
+    mainInput.setAttribute('placeholder', window.preferences.meaningPlaceholder || 'kana');
     mainInput.setAttribute('enterkeyhint', 'enter');
     mainInput.classList.add('type-input');
     typeans.parentNode.insertBefore(mainInput, typeans);
@@ -124,12 +136,17 @@ function triggerAnkiSubmit() {
               return;
             }
           } else if (`{{Card_Type}}` === 'Vocabulary' && `{{Characters}}`.length === 1) {
-            const componentReadings = `{{Components_Reading}}`.split(',')
+            const componentCharacters = `{{Components_Characters}}`.split(',')
               .map(item => item.trim())
               .filter(Boolean);
-            if (!whitelist.includes(input) && componentReadings.includes(input)) {
-              showToast(`WK3 is looking for the Vocabulary reading.`);
-              return;
+            if (componentCharacters.length === 1 && componentCharacters.includes(`{{Characters}}`)) {
+              const componentReadings = `{{Components_Reading}}`.split(',')
+                .map(item => item.trim())
+                .filter(Boolean);
+              if (!whitelist.includes(input) && componentReadings.includes(input)) {
+                showToast(`WK3 is looking for the Vocabulary reading.`);
+                return;
+              }
             }
           }
         }
@@ -143,7 +160,7 @@ function triggerAnkiSubmit() {
     if (`{{Card}}` === 'Reading') {
       wanakana.bind(mainInput);
       mainInput.style.fontFamily = 'Hiragino Kaku Gothic Pro W3';
-      mainInput.setAttribute('placeholder', 'かな');
+      mainInput.setAttribute('placeholder', window.preferences.readingPlaceholder || 'かな');
       mainInput.lang = 'ja';
     }
     setTimeout(() => mainInput.focus(), 0);
@@ -154,13 +171,15 @@ function triggerAnkiSubmit() {
 <!-- Add optional meaning input -->
 <script>
 {
+  if (!window.preferences.combineMeaningWithReading) return;
+
   if (`{{Card}}` === 'Reading' && (`{{Card_Type}}` === 'Kanji' || `{{Card_Type}}` === 'Vocabulary')) {
     const typeans = document.getElementById('typeans');
     if (typeans) {
       const optionalInput = document.createElement('input');
       optionalInput.setAttribute('type', 'text');
       optionalInput.setAttribute('id', 'optional-input');
-      optionalInput.setAttribute('placeholder', 'kana');
+      optionalInput.setAttribute('placeholder', window.preferences.meaningPlaceholder || 'kana');
       optionalInput.setAttribute('enterkeyhint', 'enter');
       optionalInput.classList.add('type-input');
       typeans.parentNode.insertBefore(optionalInput, typeans);

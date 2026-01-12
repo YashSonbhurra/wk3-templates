@@ -397,7 +397,20 @@ Sections get turned off based on which Card Type is displayed.
 {
   const mainDiv = document.getElementById('main-input');
   if (mainDiv) {
-    const mainInput = (sessionStorage.getItem('mainAnswer') || '').trim();
+    let mainInput = (sessionStorage.getItem('mainAnswer') || '').trim();
+    if (!mainInput) {
+      const typeans = document.getElementById('typeans');
+      if (typeans) {
+        typeans.innerHTML = typeans.innerHTML.replace(/<br.*/, '');
+        typeans.querySelectorAll('.typeGood, .typeBad').forEach((e) => {
+          if (e.innerHTML === '-' || e.innerHTML === ' ') return;
+          mainInput += e.innerHTML;
+        });
+        if (`{{Card}}` === 'Reading') {
+          mainInput = wanakana.toHiragana(mainInput + ' ', { IMEMode: true }).trim();
+        }
+      }
+    }
     const mainAnswer = mainInput.toLowerCase().replace(/'/g, '');
 
     const meaningWhitelist = `{{Meaning_Whitelist}}`.split(',')
@@ -421,7 +434,9 @@ Sections get turned off based on which Card Type is displayed.
       mainAnswerDiv.style.fontFamily = 'Hiragino Kaku Gothic Pro W3';
     }
 
-    const mainAnswers = mainAnswer.split(/,|、/).map(item => item.trim());
+    const mainAnswers = window.preferences.allowMultipleAnswers
+      ? mainAnswer.split(/,|、/).map(item => item.trim())
+      : [mainAnswer];
     let mainIncorrect = [];
 
     if (mainInput === '') {
@@ -447,7 +462,9 @@ Sections get turned off based on which Card Type is displayed.
       optionalAnswerDiv.classList.add('answer-display');
       optionalAnswerDiv.innerText = optionalInput;
 
-      const optionalAnswers = optionalAnswer.split(/,|、/).map(item => item.trim());
+      const optionalAnswers = window.preferences.allowMultipleAnswers
+        ? optionalAnswer.split(/,|、/).map(item => item.trim())
+        : [optionalAnswer];
 
       if (optionalInput === '') {
         optionalAnswerDiv.style.display = 'none';
@@ -509,8 +526,25 @@ Sections get turned off based on which Card Type is displayed.
   const link = document.getElementById('wk-link');
   link.style.display = 'inline';
 
-  const audio = document.querySelector('#reading-audios > :first-child'); //Female voice only or
-  //const audio = document.querySelector("#reading-audios > :nthchild(2)"); //Male voice only
-  if (audio) audio.click();
+  const autoPlay = window.preferences.autoPlayAudio;
+  const audioContainer = document.getElementById('reading-audios');
+
+  if (audioContainer) {
+    const female = audioContainer.querySelector(':first-child');
+    const male = audioContainer.querySelector(':nth-child(2)');
+
+    switch (autoPlay) {
+      case 'Female':
+        if (female) female.click();
+        break;
+      case 'Male':
+        if (male) male.click();
+        break;
+      case 'Both':
+        if (female) female.click();
+        if (male) male.click();
+        break;
+    }
+  }
 }
 </script>
