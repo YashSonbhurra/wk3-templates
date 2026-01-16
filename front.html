@@ -1,5 +1,5 @@
 {{#Reading_Whitelist}}
-<span id="level" style="display: none;">1</span>
+<span id="level">1</span>
 <span id="wk-link" style="display: none;">🔗</span>
 <div id="question-display">{{Characters}}</div>
 <div id="question-name"></div>
@@ -10,20 +10,168 @@
 
 <!-- Global Helper Functions -->
 <script>
-function openWK(type, term) {
-  const urlTerm = term.toLowerCase().replace(' ', '-');
-  window.open(`https://wanikani.com/${type}/${urlTerm}/`);
+var preferences = {
+  // Set voice for auto-playing Vocabulary audio
+  // Valid: 'Female', 'Male', 'Both'
+  // Anything else will disable auto play
+  autoPlayAudio: 'Female',
+  // Placeholder text for meaning card input
+  meaningPlaceholder: 'kana',
+  // Placeholder text for reading card input
+  readingPlaceholder: 'かな',
+  // Hide level in front of the card
+  hideLevelInFront: true,
+  // Enables clicking on "box characters" to open WaniKani
+  clickableComponents: true,
+  // Enable checking against multiple answers
+  // Answers must be comma-seperated
+  allowMultipleAnswers: true,
+  // Show meaning input alongside reading input
+  // Input is optional and can be left blank
+  combineMeaningWithReading: true,
+  // Enable detecting common type mismatches
+  // Example: Reading => Entering Kunyomi when Onyomi is asked and vice versa
+  // Example: Meaning => Entering meaning of vocbulary/radical instead of kanji
+  detectTypeMismatch: true,
+  // Set duration before hiding a toast
+  // Values are in ms; default: 3000
+  toastDuration: 3000
+};
+
+// Helper to parse comma-separated lists
+function parseList(str, normalize = false) {
+  if (!str) return [];
+  return str.split(/,|、/)
+    .map(item => {
+      let val = item.trim();
+      if (normalize) val = val.toLowerCase().replace(/'/g, '');
+      return val;
+    })
+    .filter(Boolean);
 }
 
-window.toastTimeout = null;
+// Helper to sanitize user input
+function sanitizeInput(text) {
+  return (text || '').trim().toLowerCase().replace(/'/g, '');
+}
+
+// Globally Available Card Fields
+var card = {
+  face: `{{Card}}`,
+  type: `{{Card_Type}}`,
+  characters: `{{Characters}}`,
+
+  meaningWhitelist: parseList(`{{Meaning_Whitelist}}`, true),
+  readingWhitelist: parseList(`{{Reading_Whitelist}}`, true),
+
+  components: {
+    characters: parseList(`{{Components_Characters}}`),
+    meanings: parseList(`{{Components_Meaning}}`),
+    readings: parseList(`{{Components_Reading}}`)
+  },
+  foundIn: {
+    characters: parseList(`{{Found_in_Characters}}`),
+    meanings: parseList(`{{Found_in_Meaning}}`),
+    readings: parseList(`{{Found_in_Reading}}`)
+  },
+  similar: {
+    characters: parseList(`{{Similar_Characters}}`),
+    meanings: parseList(`{{Similar_Meaning}}`),
+    readings: parseList(`{{Similar_Reading}}`)
+  }
+};
+
+function addWKListener(element, type, term) {
+  if (!preferences.clickableComponents) return;
+  element.addEventListener('click', () => {
+    const urlTerm = term.toLowerCase().replace(' ', '-');
+    window.open(`https://wanikani.com/${type}/${urlTerm}/`);
+  });
+}
+
+var toastTimeout = null;
 function showToast(message, stay = false) {
   const toast = document.getElementById('toast');
   if (toast) {
-    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+    if (toastTimeout) clearTimeout(toastTimeout);
     toast.innerText = message;
     toast.classList.add('show');
-    if (!stay) window.toastTimeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    if (!stay) toastTimeout = setTimeout(() => toast.classList.remove('show'), preferences.toastDuration || 3000);
   }
+}
+
+// Deals with pre-submission type mismatch handling
+function detectTypeMismatch(inputField) {
+  if (!preferences.detectTypeMismatch) return true;
+
+  const isOptional = inputField && inputField.id === 'optional-input';
+  const inputKey = isOptional ? 'optionalAnswer' : 'mainAnswer';
+  const input = sanitizeInput(sessionStorage.getItem(inputKey));
+
+  const cardFace = isOptional ? 'Meaning' : card.face;
+  if (cardFace === 'Meaning') {
+    if (!card.meaningWhitelist.includes(input)) {
+      if (card.type === 'Radical') {
+        const idx = card.foundIn.characters.indexOf(card.characters);
+        if (idx !== -1 && sanitizeInput(card.foundIn.meanings[idx]) === input) {
+          showToast('WK3 is looking for the Radical name.');
+          return false;
+        }
+      } else if (card.type === 'Kanji') {
+        const compIdx = card.components.characters.indexOf(card.characters);
+        if (compIdx !== -1 && sanitizeInput(card.components.meanings[compIdx]) === input) {
+          showToast('WK3 is looking for the Kanji meaning.');
+          return false;
+        }
+
+        const foundIdx = card.foundIn.characters.indexOf(card.characters);
+        if (foundIdx !== -1 && sanitizeInput(card.foundIn.meanings[foundIdx]) === input) {
+          showToast('WK3 is looking for the Kanji meaning.');
+          return false;
+        }
+      } else if (card.type === 'Vocabulary' && card.characters.length === 1) {
+        const compIdx = card.components.characters.indexOf(card.characters);
+        if (compIdx !== -1 && sanitizeInput(card.components.meanings[compIdx]) === input) {
+          showToast('WK3 is looking for the Vocabulary meaning.');
+          return false;
+        }
+      }
+    }
+  } else if (cardFace === 'Reading') {
+    inputField.value = input;
+    if (!card.readingWhitelist.includes(input)) {
+      if (card.type === 'Kanji') {
+        const onyomiReading = `{{Reading_Onyomi}}`;
+        const kunyomiReading = `{{Reading_Kunyomi}}`;
+        const nanoriReading = `{{Reading_Nanori}}`;
+
+        let wantedReading = 'On\'yomi';
+        let otherReading = `${kunyomiReading},${nanoriReading}`;
+        if (kunyomiReading.startsWith('<reading>')) {
+          wantedReading = 'Kun\'yomi';
+          otherReading = `${onyomiReading},${nanoriReading}`;
+        }
+        if (nanoriReading.startsWith('<reading>')) {
+          wantedReading = 'Nanori';
+          otherReading = `${onyomiReading},${kunyomiReading}`;
+        }
+
+        const otherReadingsList = parseList(otherReading, true);
+
+        if (otherReadingsList.includes(input)) {
+          showToast(`WK3 is looking for the ${wantedReading} reading.`);
+          return false;
+        }
+      } else if (card.type === 'Vocabulary' && card.characters.length === 1) {
+        const compIdx = card.components.characters.indexOf(card.characters);
+        if (compIdx !== -1 && sanitizeInput(card.components.readings[compIdx]) === input) {
+          showToast(`WK3 is looking for the Vocabulary reading.`);
+          return false;
+        }
+      }
+    }
+  }
+  return true;
 }
 
 function triggerAnkiSubmit() {
@@ -44,14 +192,22 @@ function triggerAnkiSubmit() {
 <script>
 {
   const level = `{{Tags}}`.match(/Lesson_(\d+)/)[1];
-  document.getElementById('level').innerHTML = level;
+  const levelElement = document.getElementById('level');
+  levelElement.innerHTML = level;
+  if (preferences.hideLevelInFront) levelElement.style.display = 'none';
 
-  const link = document.getElementById('wk-link');
-  let type = `{{Card_Type}}`.toLowerCase();
-  if (type === 'radical') type += 's';
-  if (type === 'kana_vocabulary') type = 'vocabulary';
-  const word = (type === 'radicals') ? `{{Meaning}}` : `{{Characters}}`;
-  link.addEventListener('click', () => openWK(type, word));
+  if (preferences.clickableComponents) {
+    const link = document.getElementById('wk-link');
+    let type = card.type.toLowerCase();
+    if (type === 'radical') type += 's';
+    if (type === 'kana_vocabulary') type = 'vocabulary';
+
+    const word = (type === 'radicals')
+      ? card.meaningWhitelist[0]
+      : card.characters;
+
+    addWKListener(link, type, word);
+  }
 }
 </script>
 
@@ -71,7 +227,7 @@ function triggerAnkiSubmit() {
     const mainInput = document.createElement('input');
     mainInput.setAttribute('type', 'text');
     mainInput.setAttribute('id', 'main-input');
-    mainInput.setAttribute('placeholder', 'kana');
+    mainInput.setAttribute('placeholder', preferences.meaningPlaceholder || 'kana');
     mainInput.setAttribute('enterkeyhint', 'enter');
     mainInput.classList.add('type-input');
     typeans.parentNode.insertBefore(mainInput, typeans);
@@ -80,59 +236,19 @@ function triggerAnkiSubmit() {
       const toast = document.getElementById('toast');
       toast.classList.remove('show');
 
-      if (`{{Card}}` === 'Meaning') {
-        sessionStorage.setItem('mainAnswer', mainInput.value);
-      } else {
-        const hiraganaInput = wanakana.toHiragana(mainInput.value + ' ', { IMEMode: true }).trim();
+      if (card.face === 'Reading') {
+        const hiraganaInput = wanakana.toHiragana(`${mainInput.value} `, { IMEMode: true }).trim();
         sessionStorage.setItem('mainAnswer', hiraganaInput);
+      } else {
+        sessionStorage.setItem('mainAnswer', mainInput.value);
       }
     });
+
 
     mainInput.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter' || ev.keyCode === 13) {
         ev.preventDefault();
-
-        if (`{{Card}}` === 'Reading') {
-          const input = (sessionStorage.getItem('mainAnswer') || '').trim();
-          mainInput.value = input;
-          const whitelist = `{{Reading_Whitelist}}`.split(',')
-            .map(item => item.trim())
-            .filter(Boolean);
-
-          if (`{{Card_Type}}` === 'Kanji') {
-            const onyomiReading = `{{Reading_Onyomi}}`;
-            const kunyomiReading = `{{Reading_Kunyomi}}`;
-            const nanoriReading = `{{Reading_Nanori}}`;
-
-            let wantedReading = 'On\'yomi';
-            let otherReading = `${kunyomiReading},${nanoriReading}`;
-            if (kunyomiReading.startsWith('<reading>')) {
-              wantedReading = 'Kun\'yomi';
-              otherReading = `${onyomiReading},${nanoriReading}`;
-            }
-            if (nanoriReading.startsWith('<reading>')) {
-              wantedReading = 'Nanori';
-              otherReading = `${onyomiReading},${kunyomiReading}`;
-            }
-
-            const otherReadingsList = otherReading.split(',')
-              .map(item => item.trim())
-              .filter(Boolean);
-
-            if (!whitelist.includes(input) && otherReadingsList.includes(input)) {
-              showToast(`WK3 is looking for the ${wantedReading} reading.`);
-              return;
-            }
-          } else if (`{{Card_Type}}` === 'Vocabulary' && `{{Characters}}`.length === 1) {
-            const componentReadings = `{{Components_Reading}}`.split(',')
-              .map(item => item.trim())
-              .filter(Boolean);
-            if (!whitelist.includes(input) && componentReadings.includes(input)) {
-              showToast(`WK3 is looking for the Vocabulary reading.`);
-              return;
-            }
-          }
-        }
+        if (!detectTypeMismatch(mainInput)) return;
 
         const optionalInput = document.getElementById('optional-input');
         if (optionalInput) optionalInput.focus();
@@ -140,10 +256,10 @@ function triggerAnkiSubmit() {
       }
     });
 
-    if (`{{Card}}` === 'Reading') {
+    if (card.face === 'Reading') {
       wanakana.bind(mainInput);
       mainInput.style.fontFamily = 'Hiragino Kaku Gothic Pro W3';
-      mainInput.setAttribute('placeholder', 'かな');
+      mainInput.setAttribute('placeholder', preferences.readingPlaceholder || 'かな');
       mainInput.lang = 'ja';
     }
     setTimeout(() => mainInput.focus(), 0);
@@ -151,58 +267,62 @@ function triggerAnkiSubmit() {
 }
 </script>
 
-<!-- Add optional meaning input -->
+<!-- Add optional meaning input-->
 <script>
 {
-  if (`{{Card}}` === 'Reading' && (`{{Card_Type}}` === 'Kanji' || `{{Card_Type}}` === 'Vocabulary')) {
-    const typeans = document.getElementById('typeans');
-    if (typeans) {
-      const optionalInput = document.createElement('input');
-      optionalInput.setAttribute('type', 'text');
-      optionalInput.setAttribute('id', 'optional-input');
-      optionalInput.setAttribute('placeholder', 'kana');
-      optionalInput.setAttribute('enterkeyhint', 'enter');
-      optionalInput.classList.add('type-input');
-      typeans.parentNode.insertBefore(optionalInput, typeans);
+  if (preferences.combineMeaningWithReading) {
+    if (card.face === 'Reading' && (card.type === 'Kanji' || card.type === 'Vocabulary')) {
+      const typeans = document.getElementById('typeans');
+      if (typeans) {
+        const optionalInput = document.createElement('input');
+        optionalInput.setAttribute('type', 'text');
+        optionalInput.setAttribute('id', 'optional-input');
+        optionalInput.setAttribute('placeholder', preferences.meaningPlaceholder || 'kana');
+        optionalInput.setAttribute('enterkeyhint', 'enter');
+        optionalInput.classList.add('type-input');
+        typeans.parentNode.insertBefore(optionalInput, typeans);
 
-      optionalInput.addEventListener('input', () => {
-        sessionStorage.setItem('optionalAnswer', optionalInput.value);
-      });
+        optionalInput.addEventListener('input', () => {
+          sessionStorage.setItem('optionalAnswer', optionalInput.value);
+        });
 
-      optionalInput.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.keyCode === 13) {
-          ev.preventDefault();
-          triggerAnkiSubmit();
-        }
-      });
+        optionalInput.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' || ev.keyCode === 13) {
+            ev.preventDefault();
+            if (!detectTypeMismatch(optionalInput)) return;
+            triggerAnkiSubmit();
+          }
+        });
+      }
     }
   }
 }
 </script>
 
+<!-- Populate Question Name Div-->
 <script>
 {
-  let questionName = `{{Card}}`;
-  if (`{{Card_Type}}` === 'Radical') questionName = 'Name';
+  let questionName = card.face;
+  if (card.type === 'Radical') questionName = 'Name';
 
   const questionNameDiv = document.getElementById('question-name');
-  questionNameDiv.innerHTML = `{{Card_Type}} <b>${questionName}</b>`;
+  questionNameDiv.innerHTML = `${card.type} <b>${questionName}</b>`;
   const questionDisplayDiv = document.getElementById('question-display');
 
-  if (`{{Card_Type}}` === 'Radical') {
+  if (card.type === 'Radical') {
     questionDisplayDiv.classList.add('radical');
-  } else if (`{{Card_Type}}` === 'Kanji') {
+  } else if (card.type === 'Kanji') {
     questionDisplayDiv.classList.add('kanji');
-  } else if (`{{Card_Type}}` === 'Vocabulary') {
+  } else if (card.type === 'Vocabulary') {
     questionDisplayDiv.classList.add('vocabulary');
-  } else if (`{{Card_Type}}` === 'Kana_Vocabulary') {
+  } else if (card.type === 'Kana_Vocabulary') {
     questionDisplayDiv.classList.add('kana-vocabulary');
     questionNameDiv.innerHTML = `Vocabulary <b>${questionName}</b>`;
   }
 
-  if (`{{Card}}` === 'Meaning') {
+  if (card.face === 'Meaning') {
     questionNameDiv.classList.add('meaning');
-  } else if (`{{Card}}` === 'Reading') {
+  } else if (card.face === 'Reading') {
     questionNameDiv.classList.add('reading');
   }
 }
