@@ -88,683 +88,721 @@ Sections get turned off based on which Card Type is displayed.
 
 <!--SCRIPT: Slice meanings and insert into the Meaning Section.-->
 <script>
-var title = "Meaning<hr>";
-if ("{{Card_Type}}" == "Radical") {
-	var title = "Name<hr>";
-}
-var div = document.getElementById("meaning-title");
-var element = document.createElement("p");
-element.innerHTML = title;
-div.appendChild(element);
+{
+  let title = 'Meaning<hr>';
+  if (card.type === 'Radical') title = 'Name<hr>';
+  const div = document.getElementById('meaning-title');
+  let element = document.createElement('p');
+  element.innerHTML = title;
+  div.appendChild(element);
 
-var meanings = "{{Meaning}}";
-var array = meanings.split(",");
-var primary = array[0];
-var alternative = array.splice(1);
-var wordtype = "{{Word_Type}}";
+  const meanings = `{{Meaning}}`;
+  const array = meanings.split(',');
+  const primary = array[0];
+  const alternative = array.splice(1);
+  const wordtype = `{{Word_Type}}`;
 
-var div = document.getElementById("meanings");
-var element = document.createElement("p");
-element.innerHTML = "<b>PRIMARY </b>" + primary.toString().toUpperCase();
-div.appendChild(element);
+  const divMeanings = document.getElementById('meanings');
+  element = document.createElement('p');
+  element.innerHTML = `<b>PRIMARY </b>${primary.toString().toUpperCase()}`;
+  divMeanings.appendChild(element);
 
-if (alternative.toString().length !== 0) {
-	var element = document.createElement("p");
-	element.innerHTML = "<b>ALTERNATIVE </b>" + alternative.toString().toUpperCase();
-	div.appendChild(element);
-}
+  if (alternative.toString().length !== 0) {
+    element = document.createElement('p');
+    element.innerHTML = `<b>ALTERNATIVE </b>${alternative.toString().toUpperCase()}`;
+    divMeanings.appendChild(element);
+  }
 
-if (wordtype.toString().length !== 0) {
-	var element = document.createElement("p");
-	element.innerHTML = "<b>WORD TYPE </b>" + wordtype.toString().toUpperCase();
-	div.appendChild(element);
+  if (wordtype.toString().length !== 0) {
+    element = document.createElement('p');
+    element.innerHTML = `<b>WORD TYPE </b>${wordtype.toString().toUpperCase()}`;
+    divMeanings.appendChild(element);
+  }
 }
 </script>
 
 <!--SCRIPT: Disable unused Reading divisions.-->
 <script>
-if ("{{Card_Type}}" == "Kana_Vocabulary") {
-	document.getElementsByClassName("explanation")[1].style.display = "none";
-}
+{
+  if (card.type === 'Kana_Vocabulary') {
+    const audioDiv = document.getElementById('reading-audios');
+    document.getElementsByClassName('explanation')[0].before(audioDiv);
+    document.getElementsByClassName('explanation')[1].style.display = 'none';
+  }
 
-function disable_reading_div(id, readings) {
-	var div = document.getElementById(id);
-	if (readings === "") {
-		div.style.display = "none";
-	} else {
-		div.style.display = "";
-	}
-}
+  const disable_reading_div = (id, readings) => {
+    const div = document.getElementById(id);
+    if (readings === '') div.style.display = 'none';
+    else div.style.display = '';
+  };
 
-disable_reading_div("onyomi-readings", `{{Reading_Onyomi}}`);
-disable_reading_div("kunyomi-readings", `{{Reading_Kunyomi}}`);
-disable_reading_div("nanori-readings", `{{Reading_Nanori}}`);
+  disable_reading_div('onyomi-readings', `{{Reading_Onyomi}}`);
+  disable_reading_div('kunyomi-readings', `{{Reading_Kunyomi}}`);
+  disable_reading_div('nanori-readings', `{{Reading_Nanori}}`);
+}
 </script>
 
 <!--SCRIPT: Disable unused Hint divisions.-->
 <script>
-function disable_hint_div(id, readings) {
-	var div = document.getElementById(id);
-	if (readings === "") {
-		div.style.display = "none";
-	} else {
-		div.style.display = "";
-	}
-}
+{
+  const disable_hint_div = (id, readings) => {
+    const div = document.getElementById(id);
+    if (readings === '') div.style.display = 'none';
+    else div.style.display = '';
+  };
 
-disable_hint_div("meaning-hint", `{{Meaning_Hint}}`);
-disable_hint_div("reading-hint", `{{Reading_Hint}}`);
+  disable_hint_div('meaning-hint', `{{Meaning_Hint}}`);
+  disable_hint_div('reading-hint', `{{Reading_Hint}}`);
+}
 </script>
 
-<!--SCRIPT: Slice and add Context Patterns -->
+<!--SCRIPT: Slice and add Context Patterns.-->
 <script>
-var combinations = `{{Context_Patterns}}`;
-var combinationsarray = combinations.split("|");
+{
+  const combinations = `{{Context_Patterns}}`;
+  const combinationsarray = combinations.split('|');
 
-for (var i = 1; i < 6; i+=2){
-	var div = document.getElementById('common-word-combinations');
-	var element = document.createElement("p");
-	element.innerHTML = "<ja>" + combinationsarray[0].split(";")[i] + "</ja><br>" + combinationsarray[0].split(";")[i + 1];
-	element.setAttribute("id", i);
-	if (combinationsarray[0].split(";")[i] === undefined) {
-		element.innerHTML = "<br>"; 
-	}
-	div.appendChild(element);
+  for (let i = 1; i < 6; i += 2) {
+    const div = document.getElementById('common-word-combinations');
+    const element = document.createElement('p');
+    const val1 = combinationsarray[0].split(';')[i];
+    const val2 = combinationsarray[0].split(';')[i + 1];
+    if (val1 === undefined) element.innerHTML = '<br>';
+    else element.innerHTML = `<ja>${val1}</ja><br>${val2}`;
+    element.setAttribute('id', i);
+    div.appendChild(element);
+  }
+
+  for (let i = 0; i < combinationsarray.length; i++) {
+    const div = document.getElementById('patterns-of-use');
+    const element = document.createElement('div');
+    const val = combinationsarray[i].split(';')[0];
+    element.innerHTML = `<button class=notclicked id=button name='${i}' onclick='Click()'>${val}</button><br>`;
+    div.appendChild(element);
+  }
+
+  const element = document.getElementsByName('0')[0];
+  element.classList.add('notclicked');
+  element.classList.add('clicked');
+
+  window.Click = () => {
+    const z = event.target.name;
+
+    for (let i = 0; i < combinationsarray.length; i++) {
+      const el = document.getElementsByName(i)[0];
+      el.classList.remove('clicked');
+      el.classList.add('notclicked');
+    }
+
+    const el = document.getElementsByName(event.target.name)[0];
+    el.classList.add('clicked');
+    el.classList.remove('notclicked');
+
+    for (let i = 1; i < combinationsarray[z].length; i += 2) {
+      const val1 = combinationsarray[z].split(';')[i];
+      const val2 = combinationsarray[z].split(';')[i + 1];
+      const targetEl = document.getElementById(i);
+      if (val1 === undefined) targetEl.innerHTML = ' ';
+      else targetEl.innerHTML = `<ja>${val1}</ja><br>${val2}`;
+    }
+  };
+
+  if (combinations.length === 0) {
+    document.getElementById('context-patterns').innerHTML = ' ';
+  }
 }
-
-for (var i = 0; i < combinationsarray.length; i++){
-	var div = document.getElementById("patterns-of-use")
-	var element = document.createElement("div");
-	element.innerHTML = "<button class=notclicked id=button name='" + i + "' onclick='Click()'>" + combinationsarray[i].split(";")[0] + "</button><br>";
-	div.appendChild(element);
-}
-
-var element = document.getElementsByName('0')[0];
-element.classList.add("notclicked");
-element.classList.add("clicked");
-
-function Click() {
-	var z = event.target.name;
-
-	for (var i = 0; i < combinationsarray.length; i++){
-		var element = document.getElementsByName(i)[0]
-		element.classList.remove("clicked");
-		element.classList.add("notclicked");
-	}
-
-	var element = document.getElementsByName(event.target.name)[0]
-	element.classList.add("clicked");
-	element.classList.remove("notclicked");
-
-	for (var i = 1; i < combinationsarray[z].length; i+=2){
-		document.getElementById(i).innerHTML = "<ja>" + combinationsarray[z].split(";")[i] + "</ja><br>" + combinationsarray[z].split(";")[i + 1];
-		if (combinationsarray[z].split(";")[i] === undefined) {
-			document.getElementById(i).innerHTML = " ";
-		}
-	}	
-}		
-if (combinations.length === 0) {
-	document.getElementById('context-patterns').innerHTML = " ";
-}	
 </script>
 
 <!--SCRIPT: Slice and add context sentences.-->
 <script>
-if ("{{Card_Type}}" == "Vocabulary" || "{{Card_Type}}" == "Kana_Vocabulary") {
-	var sentences = `{{Context_Sentences}}`;
-	var array = sentences.split("|");
+{
+  if (card.type === 'Vocabulary' || card.type === 'Kana_Vocabulary') {
+    const sentences = `{{Context_Sentences}}`;
+    const array = sentences.split('|');
+    const div = document.getElementById('context-sentences');
 
-	var div = document.getElementById("context-sentences");
+    const appendContextSentence = (en, jp) => {
+      if (jp !== '') {
+        const element = document.createElement('p');
+        element.innerHTML = `<p><ja>${jp}</ja><br>${en}</p>`;
+        div.appendChild(element);
+      }
+    };
 
-	function appendContextSentence(en, jp) {
-		if (jp !== "") {
-			var element = document.createElement("p");
-			element.innerHTML = "<p><ja>" + jp + "</ja><br>" + en + "</p>";
-			div.appendChild(element);
-		}
-	}
-	appendContextSentence(array[0].toString(), array[1].toString());
-	appendContextSentence(array[2].toString(), array[3].toString());
-	appendContextSentence(array[4].toString(), array[5].toString());
+    appendContextSentence(array[0].toString(), array[1].toString());
+    appendContextSentence(array[2].toString(), array[3].toString());
+    appendContextSentence(array[4].toString(), array[5].toString());
+  }
 }
 </script>
 
 <!--SCRIPT: Disable divisions.-->
 <script>
-var readingsection = document.getElementById("section-reading")
-var meaningsection = document.getElementById("section-meaning")
-var boxsection = document.getElementById("section-box")
-var contextsection = document.getElementById("section-context")
-var combinationsection = document.getElementById("section-radical-combination")
-var foundinvocabularysection = document.getElementById("section-found-in-vocabulary")
+{
+  const readingsection = document.getElementById('section-reading');
+  const boxsection = document.getElementById('section-box');
+  const contextsection = document.getElementById('section-context');
+  const combinationsection = document.getElementById('section-radical-combination');
+  const foundinvocabularysection = document.getElementById('section-found-in-vocabulary');
 
-if ("{{Card_Type}}" === "Radical") {
-	readingsection.style.display = "none";
-	contextsection.style.display = "none";
-	combinationsection.style.display = "none";
-	foundinvocabularysection.style.display = "none";
-}
-if ("{{Card_Type}}" === "Kanji") {
-	contextsection.style.display = "none";
-	compositionsection.style.display = "none";
-}
-if ("{{Card_Type}}" === "Vocabulary") {
-	combinationsection.style.display = "none";
-	foundinvocabularysection.style.display = "none";
-}
-if ("{{Card_Type}}" === "Kana_Vocabulary") {
-	readingsection.style.display = "none";
-	combinationsection.style.display = "none";
-	foundinvocabularysection.style.display = "none";
-	boxsection.style.display = "none";
+  if (card.type === 'Radical') {
+    readingsection.style.display = 'none';
+    contextsection.style.display = 'none';
+    combinationsection.style.display = 'none';
+    foundinvocabularysection.style.display = 'none';
+  }
+  if (card.type === 'Kanji') {
+    contextsection.style.display = 'none';
+  }
+  if (card.type === 'Vocabulary') {
+    combinationsection.style.display = 'none';
+    foundinvocabularysection.style.display = 'none';
+  }
+  if (card.type === 'Kana_Vocabulary') {
+    readingsection.style.display = 'none';
+    combinationsection.style.display = 'none';
+    foundinvocabularysection.style.display = 'none';
+    boxsection.style.display = 'none';
+  }
 }
 </script>
 
 <!--SCRIPT: Populate Box Characters (Found in Kanji, Visually Similar Kanji and Kanji Composition).-->
 <script>
-if ("{{Card_Type}}" == "Radical") {
-	var character = "{{Found_in_Characters}}";
-	var characterarray = character.split(", ");
-	var meaning = "{{Found_in_Meaning}}";
-	var meaningarray = meaning.split(", ");
-	var reading = "{{Found_in_Reading}}";
-	var readingarray = reading.split(", ");
+{
+  if (card.type === 'Radical') {
+    if (card.foundIn.characters.length !== 0) {
+      const div = document.getElementById('box-title');
+      const element = document.createElement('div');
+      element.innerHTML = 'Found In Kanji<hr>';
+      div.appendChild(element);
 
-	if (character.toString().length !== 0) {
-		var div = document.getElementById("box-title")
-		var element = document.createElement("div");
-		element.innerHTML = "Found In Kanji<hr>";
-		div.appendChild(element);
+      for (let i = 0; i < card.foundIn.characters.length; i++) {
+        const divContainer = document.getElementById('box-container');
+        const elementContainer = document.createElement('div');
+        elementContainer.innerHTML = `<div id=box-character>${card.foundIn.characters[i]}<div id=box-meaning>${card.foundIn.readings[i]}<br>${card.foundIn.meanings[i]}</div></div>`;
+        addWKListener(elementContainer, 'kanji', card.foundIn.characters[i]);
+        divContainer.appendChild(elementContainer);
+      }
+    }
+  } else if (card.type === 'Kanji') {
+    if (card.similar.characters.length !== 0) {
+      const div = document.getElementById('box-title');
+      const element = document.createElement('div');
+      element.innerHTML = 'Visually Similar Kanji<hr>';
+      div.appendChild(element);
 
-		for (var i = 0; i < characterarray.length; i++) {
-			var div = document.getElementById("box-container")
-			var element = document.createElement("div");
-			element.innerHTML = "<div id=box-character>" + characterarray[i] + "<div id=box-meaning>" + readingarray[i] + "<br>" + meaningarray[i] + "</div></div>";
-			div.appendChild(element);
-		}
-	}
-} else if ("{{Card_Type}}" == "Kanji") {
-	var character = "{{Similar_Characters}}";
-	var characterarray = character.split(", ");
-	var meaning = "{{Similar_Meaning}}";
-	var meaningarray = meaning.split(", ");
-	var reading = "{{Similar_Reading}}";
-	var readingarray = reading.split(", ");
+      for (let i = 0; i < card.similar.characters.length; i++) {
+        const divContainer = document.getElementById('box-container');
+        const elementContainer = document.createElement('div');
+        elementContainer.innerHTML = `<div id=box-character>${card.similar.characters[i]}<div id=box-meaning>${card.similar.readings[i]}<br>${card.similar.meanings[i].toString().substring(0, 15)}</div></div>`;
+        addWKListener(elementContainer, 'kanji', card.similar.characters[i]);
+        divContainer.appendChild(elementContainer);
+      }
+    }
+  } else if (card.type === 'Vocabulary') {
+    if (card.components.characters.length !== 0) {
+      const div = document.getElementById('box-title');
+      const element = document.createElement('div');
+      element.innerHTML = 'Kanji Composition<hr>';
+      div.appendChild(element);
 
-	if (character.toString().length !== 0) {
-		var div = document.getElementById("box-title")
-		var element = document.createElement("div");
-		element.innerHTML = "Visually Similar Kanji<hr>";
-		div.appendChild(element);
-
-		for (var i = 0; i < characterarray.length; i++) {
-			var div = document.getElementById("box-container");
-			var element = document.createElement("div");
-			element.innerHTML = "<div id=box-character>" + characterarray[i] + "<div id=box-meaning>" + readingarray[i] + "<br>" + meaningarray[i].toString().substring(0, 15) + "</div></div>";
-			div.appendChild(element);
-		}
-	}
-} else if ("{{Card_Type}}" == "Vocabulary") {
-	var character = `{{Components_Characters}}`;
-	var characterarray = character.split(", ");
-	var meaning = "{{Components_Meaning}}";
-	var meaningarray = meaning.split(", ");
-	var reading = "{{Components_Reading}}";
-	var readingarray = reading.split(", ");
-
-	if (character.toString().length !== 0) {
-		var div = document.getElementById("box-title")
-		var element = document.createElement("div");
-		element.innerHTML = "Kanji Composition<hr>";
-		div.appendChild(element);
-
-		for (var i = 0; i < characterarray.length; i++) {
-			var div = document.getElementById("box-container")
-			var element = document.createElement("div");
-			element.innerHTML = "<div id=box-character>" + characterarray[i] + "<div id=box-meaning>" + readingarray[i] + "<br>" + meaningarray[i].toString().substring(0, 15) + "</div></div>";
-			div.appendChild(element);
-		}
-	}
+      for (let i = 0; i < card.components.characters.length; i++) {
+        const divContainer = document.getElementById('box-container');
+        const elementContainer = document.createElement('div');
+        elementContainer.innerHTML = `<div id=box-character>${card.components.characters[i]}<div id=box-meaning>${card.components.readings[i]}<br>${card.components.meanings[i].toString().substring(0, 15)}</div></div>`;
+        addWKListener(elementContainer, 'kanji', card.components.characters[i]);
+        divContainer.appendChild(elementContainer);
+      }
+    }
+  }
 }
 </script>
 
 <!--SCRIPT: Add Radical Combination Characters.-->
 <script>
-if ("{{Card_Type}}" == "Kanji") {
-	var character = `{{Components_Characters}}`;
-	var characterarray = character.split(", ");
-	var meaning = "{{Components_Meaning}}";
-	var meaningarray = meaning.split(", ");
-	
-	for (var i = 0; i < meaningarray.length; i++){
-		var div = document.getElementById("combination")
-		var element = document.createElement("div");
-	
-		element.innerHTML = "<radical-combination>"+ characterarray[i] + "</radical-combination>" + "" + meaningarray[i].toString().substring(0, 15) + "";
-		div.appendChild(element);
-	
-		if (i + 1 != characterarray.length) {
-			var div = document.getElementById("combination")
-			var element = document.createElement("p");
-			element.innerHTML = "<div class=combination-plus><b>+<b/></div>";
-			div.appendChild(element);
-		}
-	}
+{
+  if (card.type === 'Kanji') {
+    for (let i = 0; i < card.components.meanings.length; i++) {
+      const div = document.getElementById('combination');
+      const element = document.createElement('div');
+
+      element.innerHTML = `<radical-combination>${card.components.characters[i]}</radical-combination>${card.components.meanings[i].toString().substring(0, 15)}`;
+      addWKListener(element, 'radicals', card.components.meanings[i]);
+      div.appendChild(element);
+
+      if (i + 1 !== card.components.characters.length) {
+        const elementPlus = document.createElement('p');
+        elementPlus.innerHTML = '<div class=combination-plus><b>+</b></div>';
+        div.appendChild(elementPlus);
+      }
+    }
+  }
 }
 </script>
 
 <!--SCRIPT: Add Found in Vocabulary Characters.-->
 <script>
-if ("{{Card_Type}}" == "Kanji") {
-	var character = "{{Found_in_Characters}}";
-	var characterarray = character.split(", ");
-	var meaning = "{{Found_in_Meaning}}";
-	var meaningarray = meaning.split(", ");
-	var reading = "{{Found_in_Reading}}";
-	var readingarray = reading.split(", ");
-	
-	for (var i = 0; i < characterarray.length; i++){
-		var div = document.getElementById("found-in-vocabulary-container")
-		var element = document.createElement("div");
-		element.innerHTML = "<div id=found-in-vocabulary-box><div class=found-in-voc>"+ characterarray[i] +"</div><div class=found-in-voc-reading>" + readingarray[i] +"<br>" + meaningarray[i] +"</div></div>";
-		div.appendChild(element);
-	}
-	
-	if (character.toString().length == 0) {
-		var foundinvocabularysection = document.getElementById("section-found-in-vocabulary")
-		foundinvocabularysection.style.display = "none";
-	}
+{
+  if (card.type === 'Kanji') {
+    for (let i = 0; i < card.foundIn.characters.length; i++) {
+      const div = document.getElementById('found-in-vocabulary-container');
+      const element = document.createElement('div');
+      element.innerHTML = `<div id=found-in-vocabulary-box><div class=found-in-voc>${card.foundIn.characters[i]}</div><div class=found-in-voc-reading>${card.foundIn.readings[i]}<br>${card.foundIn.meanings[i]}</div></div>`;
+      addWKListener(element, 'vocabulary', card.foundIn.characters[i]);
+      div.appendChild(element);
+    }
+
+    if (card.foundIn.characters.length === 0) {
+      const foundinvocabularysection = document.getElementById('section-found-in-vocabulary');
+      foundinvocabularysection.style.display = 'none';
+    }
+  }
 }
 </script>
 
-<!--SCRIPT: Check the answer -->
+<!--SCRIPT: Check the answer.-->
 <script>
-//some addons read the script too early:
-if (document.getElementById("typeans")) {
-	var typedAnswer = "";
-	var typedAnswer_element = document.getElementById("typeans");
-	if (typedAnswer_element) {
-		typedAnswer_element.innerHTML = typedAnswer_element.innerHTML.replace(/<br.*/, "");
-		typedAnswer_element.querySelectorAll(".typeGood, .typeBad").forEach((e) => {
-			if (e.innerHTML == "-") return;
-			typedAnswer += e.innerHTML;
-		});
-	}
-	var typedAnswerLower = typedAnswer.replace(/'/).toLowerCase();
-	var meaningWhitelist = `{{Meaning_Whitelist}}`.replace(/'/).toLowerCase().split(", ");
-	var readingWhitelist = `{{Reading_Whitelist}}`.toLowerCase().split(", ");
+{
+  const mainDiv = document.getElementById('main-input');
+  if (mainDiv) {
+    let mainInput = (sessionStorage.getItem('mainAnswer') || '').trim();
+    if (!mainInput) {
+      const typeans = document.getElementById('typeans');
+      if (typeans) {
+        typeans.innerHTML = typeans.innerHTML.replace(/<br.*/, '');
+        typeans.querySelectorAll('.typeGood, .typeBad').forEach((e) => {
+          if (e.innerHTML === '-' || e.innerHTML === ' ') return;
+          mainInput += e.innerHTML;
+        });
+        if (card.face === 'Reading') {
+          mainInput = wanakana.toHiragana(`${mainInput} `, { IMEMode: true }).trim();
+        }
+      }
+    }
+    const mainAnswer = sanitizeInput(mainInput);
 
-	var correctAnswers = [];
-	var incorrectAnswers = [];
-	if (`{{Card}}` === "Meaning") {
-		correctAnswers = meaningWhitelist;
-	} else if (`{{Card}}` === "Reading") {
-		correctAnswers = readingWhitelist;
-	}
+    let correctAnswers = [];
+    if (card.face === 'Meaning') {
+      correctAnswers = card.meaningWhitelist;
+    } else if (card.face === 'Reading') {
+      correctAnswers = card.readingWhitelist;
+    }
 
-	var answerDiv = document.createElement("div");
-	answerDiv.setAttribute("id","typeans");
-	answerDiv.innerHTML = typedAnswer;
-	document.getElementById("typeans").replaceWith(answerDiv);
+    const mainAnswerDiv = document.createElement('div');
+    mainAnswerDiv.classList.add('answer-display');
+    mainAnswerDiv.innerText = mainInput;
+    if (card.face === 'Reading') {
+      mainAnswerDiv.style.fontFamily = 'Hiragino Kaku Gothic Pro W3';
+    }
 
-	if (typedAnswerLower === "") {
-		answerDiv.style.display = "none";
-	} else if (correctAnswers.includes(typedAnswerLower)) {
-		answerDiv.classList.add("correct");
-	} else {
-		answerDiv.classList.add("incorrect");
-	}
+    const mainAnswers = preferences.allowMultipleAnswers
+      ? parseList(mainAnswer)
+      : [mainAnswer];
+    let mainIncorrect = [];
+
+    if (mainInput === '') {
+      mainAnswerDiv.style.display = 'none';
+    } else if (mainAnswers.some(ans => correctAnswers.includes(ans))) {
+      mainAnswerDiv.classList.add('correct');
+      mainIncorrect = mainAnswers.filter(ans => !correctAnswers.includes(ans));
+    } else {
+      mainAnswerDiv.classList.add('incorrect');
+    }
+
+    mainDiv.replaceWith(mainAnswerDiv);
+    sessionStorage.setItem('mainAnswer', '');
+
+    const optionalDiv = document.getElementById('optional-input');
+    let optionalIncorrect = [];
+
+    if (optionalDiv) {
+      const optionalInput = (sessionStorage.getItem('optionalAnswer') || '').trim();
+      const optionalAnswer = sanitizeInput(optionalInput);
+
+      const optionalAnswerDiv = document.createElement('div');
+      optionalAnswerDiv.classList.add('answer-display');
+      optionalAnswerDiv.innerText = optionalInput;
+
+      const optionalAnswers = preferences.allowMultipleAnswers
+        ? parseList(optionalAnswer)
+        : [optionalAnswer];
+
+      if (optionalInput === '') {
+        optionalAnswerDiv.style.display = 'none';
+      } else if (optionalAnswers.some(ans => card.meaningWhitelist.includes(ans))) {
+        optionalAnswerDiv.classList.add('correct');
+        optionalIncorrect = optionalAnswers.filter(ans => !card.meaningWhitelist.includes(ans));
+      } else {
+        optionalAnswerDiv.classList.add('incorrect');
+      }
+
+      optionalDiv.replaceWith(optionalAnswerDiv);
+      sessionStorage.setItem('optionalAnswer', '');
+    }
+
+    if (mainIncorrect.length > 0 || optionalIncorrect.length > 0) {
+      let msg = '';
+      if (mainIncorrect.length > 0) {
+        msg += `Wrong ${card.face}: ${mainIncorrect.join(', ')}`;
+      }
+      if (mainIncorrect.length > 0 && optionalIncorrect.length > 0) {
+        msg += '\n';
+      }
+      if (optionalIncorrect.length > 0) {
+        msg += `Wrong Meaning: ${optionalIncorrect.join(', ')}`;
+      }
+      showToast(msg, true);
+    }
+  }
 }
 </script>
 
 <!-- Generate tooltips -->
 <script>
-function setTooltips(tags, text) {
-	for (var i = 0; i < tags.length; i++) {
-		tags[i].setAttribute("title", text);
-	}
+{
+  const setTooltips = (tags, text) => {
+    for (let i = 0; i < tags.length; i++) {
+      tags[i].setAttribute('title', text);
+    }
+  };
+
+  const kanji = document.getElementsByTagName('kanji');
+  const radicals = document.getElementsByTagName('radical');
+  const vocab = document.getElementsByTagName('vocabulary');
+  const reading = document.getElementsByTagName('reading');
+
+  setTooltips(kanji, 'Kanji');
+  setTooltips(radicals, 'Radical');
+  setTooltips(vocab, 'Vocabulary');
+  setTooltips(reading, 'Reading');
 }
-
-var kanji = document.getElementsByTagName("kanji");
-var radicals = document.getElementsByTagName("radical");
-var vocab = document.getElementsByTagName("vocabulary");
-var reading = document.getElementsByTagName("reading");
-
-setTooltips(kanji, "Kanji");
-setTooltips(radicals, "Radical");
-setTooltips(vocab, "Vocabulary");
-setTooltips(reading, "Reading");
 </script>
 
 <!-- Pitch Accent Info -->
 <script>
-	var characters = `{{Characters}}`;
-	var readings = `{{Reading}}`;
-	readings = readings.split(",").map(function (r) {
-		return r.trim();
-	});
-	var readingsContainer = document.createElement("div");
-	readingsContainer.id = "vocabulary-readings-container";
-	readings.map(function (r, i) {
-		var _c = document.createElement("div");
-		_c.id = "reading-" + (i + 1);
-		_c.classList.add("vocabulary-reading-entry");
-		_c.innerHTML = r;
-		readingsContainer.appendChild(_c);
-	});
-	document
-		.getElementById("vocabulary-reading")
-		.replaceChildren(readingsContainer);
+{
+  if (preferences.pitchAccent && (card.type === 'Vocabulary' || card.type === 'Kana_Vocabulary')) {
+    const readings = parseList(card.readingWhitelist.join(','));
 
-	var readingsection = document.getElementById("section-reading");
-	readingsection.style.display = "block";
+    const readingsContainer = document.createElement('div');
+    readingsContainer.id = 'vocabulary-readings-container';
 
-	var SHOW_PITCH_DESCRIPTION = true;
-	var SQUASH_DIGRAPHS = false;
-	var PRE_PARSE = false; // load entire "accents.txt" into an object for faster lookup (true: lookup takes ~0.06ms; false: lookup takes ~0.5ms)
-	var DOT_RADIUS = 0.2;
-	var STROKE_WIDTH = 0.1;
+    readings.forEach((r, i) => {
+      const div = document.createElement('div');
+      div.id = `reading-${i + 1}`;
+      div.classList.add('vocabulary-reading-entry');
+      div.innerHTML = r;
+      readingsContainer.appendChild(div);
+    });
+    const vocabReading = document.getElementById('vocabulary-reading');
+    vocabReading.innerHTML = '';
+    vocabReading.appendChild(readingsContainer);
 
-	var WEB_URL =
-		"http://www.gavo.t.u-tokyo.ac.jp/ojad/search/index/curve:fujisaki/word:%s";
-	var digraphs = "ぁぃぅぇぉゃゅょゎゕゖァィゥェォャュョヮヵヶ";
+    const readingsection = document.getElementById('section-reading');
+    readingsection.style.display = 'block';
 
-	var pitchLookup = null;
+    const SHOW_PITCH_DESCRIPTION = true;
+    const SQUASH_DIGRAPHS = false;
+    const DOT_RADIUS = 0.2;
+    const STROKE_WIDTH = 0.1;
+    const WEB_URL = 'http://www.gavo.t.u-tokyo.ac.jp/ojad/search/index/curve:fujisaki/word:%s';
 
-	// Get the color and the pitch pattern name
-	var patternObj = {
-		heiban: {
-			name: "平板",
-			nameEng: "heiban",
-			cssClass: "heiban",
-			color: "#d20ca3",
-		},
-		odaka: {
-			name: "尾高",
-			nameEng: "odaka",
-			cssClass: "odaka",
-			color: "#0cd24d",
-		},
-		nakadaka: {
-			name: "中高",
-			nameEng: "nakadaka",
-			cssClass: "nakadaka",
-			color: "#27a2ff",
-		},
-		atamadaka: {
-			name: "頭高",
-			nameEng: "atamadaka",
-			cssClass: "atamadaka",
-			color: "#EA9316",
-		},
-		unknown: {
-			name: "不詳",
-			nameEng: "No pitch value found, click the number for more info.",
-			cssClass: "unknown",
-			color: "#CCCCCC",
-		},
-	};
+    const digraphs = 'ぁぃぅぇぉゃゅょゎゕゖァィゥェォャュョヮヵヶ';
+    let pitchLookup = null;
 
-	var JAPANESE_TO_WORD_TYPE = {
-		名: "Noun",
-		代: "Pronoun",
-		副: "Adverb",
-		形動: "な Adjective",
-		感: "Interjection",
-	};
-	
-	if (`{{Card_Type}}` == "Vocabulary" || `{{Card_Type}}` == "Kana_Vocabulary") {
-		injectPitchInfo();
-		addCss();
-	}
+    const patternObj = {
+      heiban: {
+        name: '平板',
+        nameEng: 'heiban',
+        cssClass: 'heiban',
+        color: '#d20ca3'
+      },
+      odaka: {
+        name: '尾高',
+        nameEng: 'odaka',
+        cssClass: 'odaka',
+        color: '#0cd24d'
+      },
+      nakadaka: {
+        name: '中高',
+        nameEng: 'nakadaka',
+        cssClass: 'nakadaka',
+        color: '#27a2ff'
+      },
+      atamadaka: {
+        name: '頭高',
+        nameEng: 'atamadaka',
+        cssClass: 'atamadaka',
+        color: '#EA9316'
+      },
+      unknown: {
+        name: '不詳',
+        nameEng: 'No pitch value found, click the number for more info.',
+        cssClass: 'unknown',
+        color: '#CCCCCC'
+      }
+    };
+    const JAPANESE_TO_WORD_TYPE = {
+      名: 'Noun',
+      代: 'Pronoun',
+      副: 'Adverb',
+      形動: 'な Adjective',
+      感: 'Interjection'
+    };
 
-	function injectPitchInfo() {
-		document.querySelectorAll('.vocabulary-reading-entry').forEach(pReading => {
-			let reading = pReading.textContent;
-			getPitchInfo(characters, reading).then(function(pitchInfo){
-				if (!pitchInfo) return;
-				let dInfo = null;
-				let wordTypes = [
-					...new Set(
-						[...pitchInfo.matchAll(/[\(;]([^\);]*)/g)].flatMap(
-							(r) => r[1]
-						)
-					),
-				];
-				if (wordTypes.length > 0) {
-					let wordTypeToPitch = wordTypes.map((w) => [w, [ ...pitchInfo.matchAll(new RegExp(w + "[^\\)]*\\)([\\d,]+)", "g") )]
-						.flatMap((r) => r[1])
-						.join("")
-						.split(",")
-						.filter((p) => p)
-						.map((p) => parseInt(p))
-					]);
-					dInfo = appendPitchPatternInfo( pReading, pitchByWordTypeToInfoElements(wordTypeToPitch,characters,reading));
-					pitchInfo = [...new Set([...pitchInfo.matchAll(/\d/g)].map((r) => r[0]))].map((p) => parseInt(p));
-				}else{
-					pitchInfo = pitchInfo.split(",").map((p) => parseInt(p));
-					dInfo = appendPitchPatternInfo(
-						pReading,
-						pitchToInfoElements(
-							pitchInfo,
-							characters,
-							reading
-						)
-					);
-				}
-				let diagrams = pitchInfo.map((p) => drawPitchDiagram(p, reading));
-				pReading.before(...diagrams);
-				makeMonospaced(pReading.childNodes[0]);
-			});
-		});
-	}
+    const getMoraCount = (reading) => {
+      return [...reading].filter(c => !digraphs.includes(c)).length;
+    };
 
-	function pitchByWordTypeToInfoElements(wordTypeToPitch, vocab, reading) {
-		let result = wordTypeToPitch.flatMap(([wordType, pitch]) => [
-			`${JAPANESE_TO_WORD_TYPE[wordType]}: `,
-			...pitchToInfoElements(pitch, vocab, reading),
-			", ",
-		]);
-		result.pop();
-		return result;
-	}
+    const getPitchType = (pitchNum, moraCount) => {
+      if (pitchNum === 0) return patternObj.heiban;
+      if (pitchNum === 1) return patternObj.atamadaka;
+      if (pitchNum === moraCount) return patternObj.odaka;
+      if (pitchNum < moraCount) return patternObj.nakadaka;
+      return patternObj.unknown;
+    };
 
-	function pitchToInfoElements(pitch, vocab, reading) {
-		return pitch.flatMap((p, i) => [
-			i === 0 ? "" : " or ",
-			generatePatternText(p, vocab, reading),
-		]);
-	}
+    const drawPitchDiagram = (pitchNum, reading) => {
+      const moraCount = getMoraCount(reading);
+      const width = SQUASH_DIGRAPHS ? moraCount : reading.length;
+      const patternType = getPitchType(pitchNum, moraCount);
 
-	function appendPitchPatternInfo(readingElement, infoElements) {
-		if (!SHOW_PITCH_DESCRIPTION) return null;
-		let dInfo = document.createElement("div");
-		let hInfo = document.createElement("h3");
-		let pInfo = document.createElement("p");
-		hInfo.textContent = "Pitch Pattern";
-		dInfo.classList.add("pitch-pattern");
-		pInfo.append(...infoElements);
-		dInfo.append(hInfo, pInfo);
-		readingElement.after(dInfo);
-		return dInfo;
-	}
+      const namespace = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(namespace, 'svg');
+      svg.setAttribute('viewBox', `-0.5 -0.25 ${width + 1} 1.5`);
 
-	function loadPitchInfo(){
-		return new Promise(function (resolve, reject) {
-			if (pitchLookup) return resolve(pitchLookup);
+      const xCoords = [];
+      for (let i = 0; i <= reading.length; i++) {
+        if (!SQUASH_DIGRAPHS && digraphs.includes(reading[i])) {
+          xCoords[xCoords.length - 1] += 0.5;
+        } else {
+          xCoords.push(i);
+        }
+      }
 
-			const lookupObject = JSON.parse(`{{Pitch_Accent}}`);
-			pitchLookup = (vocab, reading) =>
-				pitchLookupObject(vocab, reading, lookupObject);
-			return resolve(pitchLookup);
-		});
-	}
+      let yCoords = new Array(moraCount + 1).fill(null);
+      yCoords = yCoords.map((_, i) => {
+        if (pitchNum === 0) return i === 0 ? 1 : 0;
+        if (i + 1 === pitchNum) return 0;
+        if (i === 0) return 1;
+        return i < pitchNum ? 0 : 1;
+      });
+      const points = yCoords.map((y, i) => ({ x: xCoords[i], y }));
 
-	function pitchLookupObject(vocab, reading, lookupObject) {
-		return lookupObject[vocab + "|" + reading];
-	}
+      const polyline = document.createElementNS(namespace, 'polyline');
+      polyline.setAttribute('fill', 'none');
+      polyline.setAttribute('stroke', patternType.color);
+      polyline.setAttribute('stroke-width', STROKE_WIDTH);
+      polyline.setAttribute(
+        'points',
+        points.map(p => `${p.x},${p.y}`).join(' ')
+      );
+      svg.appendChild(polyline);
 
-	function getPitchInfo(vocab, reading) {
-		return new Promise(function (resolve, reject) {
-			loadPitchInfo().then(function(pitchLookup){
-				let result = pitchLookup(vocab, reading);
-				if (!result)
-					result = pitchLookup(
-						vocab.replace(/する$/, ""),
-						reading.replace(/する$/, "")
-					);
-				if (!result)
-					result = pitchLookup(toHiragana(vocab), toHiragana(reading));
-				if (!result)
-					result = pitchLookup(toKatakana(vocab), toKatakana(reading));
-				return resolve(result);
-			}).catch(console.error);
-		});
-	}
+      points.forEach((p, i) => {
+        const isParticle = i === points.length - 1;
+        const circle = document.createElementNS(namespace, 'circle');
+        circle.setAttribute(
+          'fill',
+          isParticle ? '#eeeeee' : patternType.color
+        );
+        circle.setAttribute(
+          'stroke',
+          isParticle ? 'black' : patternType.color
+        );
+        circle.setAttribute(
+          'stroke-width',
+          isParticle ? STROKE_WIDTH / 2 : 0
+        );
+        circle.setAttribute('cx', p.x);
+        circle.setAttribute('cy', p.y);
+        circle.setAttribute('r', DOT_RADIUS);
+        svg.appendChild(circle);
+      });
+      const p = document.createElement('p');
+      p.classList.add('pitch-diagram');
+      p.lang = 'ja';
+      p.appendChild(svg);
+      return p;
+    };
 
-	function toHiragana(kana) {
-		let arr = [...kana];
-		return arr
-			.map((c) => c.charCodeAt(0))
-			.map((c) => (12449 <= c && c <= 12534 ? c - 96 : c))
-			.map((c) => String.fromCharCode(c))
-			.join("");
-	}
+    const generatePatternText = (pitchNum, vocab, reading) => {
+      const moraCount = getMoraCount(reading);
+      const patternType = getPitchType(pitchNum, moraCount);
+      const sName = document.createElement('span');
+      const aLink = document.createElement('a');
+      aLink.href = WEB_URL.replace('%s', vocab);
+      aLink.target = '_blank';
+      aLink.title = `Pitch Pattern: ${patternType.nameEng} (${patternType.name})`;
+      aLink.textContent = `[${pitchNum}]`;
+      sName.textContent = `${patternType.name} `;
+      sName.classList.add(patternType.cssClass);
+      sName.appendChild(aLink);
+      return sName;
+    };
 
-	function toKatakana(kana) {
-		let arr = [...kana];
-		return arr
-			.map((c) => c.charCodeAt(0))
-			.map((c) => (12353 <= c && c <= 12438 ? c + 96 : c))
-			.map((c) => String.fromCharCode(c))
-			.join("");
-	}
+    const makeMonospaced = (textNode) => {
+      let chars = [...textNode.textContent];
+      if (SQUASH_DIGRAPHS) {
+        chars.forEach((c, i, a) => {
+          if (digraphs.includes(c)) a[i - 1] += c;
+        });
+        chars = chars.filter(c => !digraphs.includes(c));
+      }
+      const spans = chars.map((c) => {
+        const span = document.createElement('span');
+        span.textContent = c;
+        span.classList.toggle('digraph', c.length > 1);
+        return span;
+      });
+      textNode.replaceWith(...spans);
+    };
 
-	function getPitchType(pitchNum, moraCount) {
-		if (pitchNum == 0) return patternObj.heiban;
-		if (pitchNum == 1) return patternObj.atamadaka;
-		if (pitchNum == moraCount) return patternObj.odaka;
-		if (pitchNum < moraCount) return patternObj.nakadaka;
-		return patternObj.unknown;
-	}
+    const pitchToInfoElements = (pitch, vocab, reading) => {
+      return pitch.map((p, i) => [
+        i === 0 ? '' : ' or ',
+        generatePatternText(p, vocab, reading)
+      ]).reduce((acc, val) => acc.concat(val), []);
+    };
 
-	function getMoraCount(reading) {
-		return [...reading].filter((c) => !digraphs.includes(c)).length;
-	}
+    const pitchByWordTypeToInfoElements = (wordTypeToPitch, vocab, reading) => {
+      const result = wordTypeToPitch.map(([wordType, pitch]) => [
+        `${JAPANESE_TO_WORD_TYPE[wordType]}: `,
+        ...pitchToInfoElements(pitch, vocab, reading),
+        ', '
+      ]).reduce((acc, val) => acc.concat(val), []);
+      result.pop();
+      return result;
+    };
 
-	function drawPitchDiagram(pitchNum, reading) {
-		let moraCount = getMoraCount(reading);
-		let width = SQUASH_DIGRAPHS ? moraCount : reading.length;
-		let patternType = getPitchType(pitchNum, moraCount);
+    const appendPitchPatternInfo = (readingElement, infoElements) => {
+      if (!SHOW_PITCH_DESCRIPTION) return null;
+      const dInfo = document.createElement('div');
+      const hInfo = document.createElement('h3');
+      const pInfo = document.createElement('p');
+      hInfo.textContent = 'Pitch Pattern';
+      dInfo.classList.add('pitch-pattern');
+      pInfo.append(...infoElements);
+      dInfo.append(hInfo, pInfo);
+      readingElement.after(dInfo);
+      return dInfo;
+    };
 
-		let namespace = "http://www.w3.org/2000/svg";
-		let svg = document.createElementNS(namespace, "svg");
-		svg.setAttribute("viewBox", `-0.5 -0.25 ${width + 1} 1.5`);
+    const pitchLookupObject = (vocab, reading, lookupObject) => {
+      return lookupObject[`${vocab}|${reading}`];
+    };
 
-		let xCoords = [];
-		for (let i = 0; i <= reading.length; i++) {
-			// using "<=" to get additional iteration for particle node
-			if (!SQUASH_DIGRAPHS && digraphs.includes(reading[i])) {
-				xCoords[xCoords.length - 1] += 0.5;
-			} else {
-				xCoords.push(i);
-			}
-		}
-		let yCoords = new Array(moraCount + 1).fill(null);
-		yCoords = yCoords.map((_, i) => {
-			if (pitchNum == 0) return i === 0 ? 1 : 0;
-			if (i + 1 == pitchNum) return 0;
-			if (i === 0) return 1;
-			return i < pitchNum ? 0 : 1;
-		});
-		let points = yCoords.map((y, i) => ({ x: xCoords[i], y }));
+    const loadPitchInfo = () => {
+      if (pitchLookup) return pitchLookup;
 
-		let polyline = document.createElementNS(namespace, "polyline");
-		polyline.setAttribute("fill", "none");
-		polyline.setAttribute("stroke", patternType.color);
-		polyline.setAttribute("stroke-width", STROKE_WIDTH);
-		polyline.setAttribute(
-			"points",
-			points.map((p) => `${p.x},${p.y}`).join(" ")
-		);
-		svg.appendChild(polyline);
+      const lookupObject = JSON.parse(`{{Pitch_Accent}}`);
+      pitchLookup = (vocab, reading) =>
+        pitchLookupObject(vocab, reading, lookupObject);
+      return pitchLookup;
+    };
 
-		points.forEach((p, i) => {
-			let isParticle = i === points.length - 1;
-			let circle = document.createElementNS(namespace, "circle");
-			circle.setAttribute(
-				"fill",
-				isParticle ? "#eeeeee" : patternType.color
-			);
-			circle.setAttribute(
-				"stroke",
-				isParticle ? "black" : patternType.color
-			);
-			circle.setAttribute(
-				"stroke-width",
-				isParticle ? STROKE_WIDTH / 2 : 0
-			);
-			circle.setAttribute("cx", p.x);
-			circle.setAttribute("cy", p.y);
-			circle.setAttribute("r", DOT_RADIUS);
-			svg.appendChild(circle);
-		});
-		let p = document.createElement("p");
-		p.classList.add("pitch-diagram");
-		p.lang = "ja"; // to match the WK CSS selector containing the reading font size
-		p.appendChild(svg);
-		return p;
-		return svg;
-	}
+    const getPitchInfo = (vocab, reading) => {
+      const lookup = loadPitchInfo();
+      let result = lookup(vocab, reading);
+      if (!result) {
+        result = lookup(
+          vocab.replace(/する$/, ''),
+          reading.replace(/する$/, '')
+        );
+      }
+      if (!result) {
+        result = lookup(wanakana.toHiragana(vocab), wanakana.toHiragana(reading));
+      }
+      if (!result) {
+        result = lookup(wanakana.toKatakana(vocab), wanakana.toKatakana(reading));
+      }
+      return result;
+    };
 
-	function generatePatternText(pitchNum, vocab, reading) {
-		let moraCount = getMoraCount(reading);
-		let patternType = getPitchType(pitchNum, moraCount);
-		let sName = document.createElement("span");
-		let aLink = document.createElement("a");
-		aLink.href = WEB_URL.replace("%s", vocab);
-		aLink.target = "_blank";
-		aLink.title = `Pitch Pattern: ${patternType.nameEng} (${patternType.name})`;
-		aLink.textContent = `[${pitchNum}]`;
-		sName.textContent = patternType.name + " ";
-		sName.classList.add(patternType.cssClass);
-		sName.appendChild(aLink);
-		return sName;
-	}
+    const injectPitchInfo = () => {
+      document.querySelectorAll('.vocabulary-reading-entry').forEach(pReading => {
+        const reading = pReading.textContent;
+        const pitchInfo = getPitchInfo(card.characters, reading);
+        if (!pitchInfo) return;
 
-	function makeMonospaced(textNode) {
-		let characters = [...textNode.textContent];
-		if (SQUASH_DIGRAPHS) {
-			characters.forEach((c, i, a) => {
-				if (digraphs.includes(c)) a[i - 1] += c;
-			});
-			characters = characters.filter((c) => !digraphs.includes(c));
-		}
-		let spans = characters.map((c) => {
-			let span = document.createElement("span");
-			span.textContent = c;
-			span.classList.toggle("digraph", c.length > 1);
-			return span;
-		});
-		textNode.replaceWith(...spans);
-	}
+        const regex = /[(;]([^);]*)/g;
+        let match;
+        const matches = [];
+        while ((match = regex.exec(pitchInfo)) !== null) matches.push(match[1]);
+        const wordTypes = [...new Set(matches)];
 
-	function addCss() {
-		let style = document.createElement("style");
-		style.textContent = `
-		#vocabulary-readings-container svg							{ height: 1.5em; width: auto; display: block; }
-		.vocabulary-reading											{padding: 10px 0; }
-		.vocabulary-reading-entry									{ line-height: 2.2em; margin: 0; }
-		.vocabulary-reading-entry span								{ width: 1em; display: inline-block; text-align: center; white-space: nowrap; }
-		.vocabulary-reading-entry span.digraph						{ font-feature-settings: 'hwid' on; }
-		.pitch-pattern												{ display: flex; margin-bottom: 0; color: #999; text-transform: uppercase; }
-		.pitch-pattern h3, #item-info .pitch-pattern h3				{ margin: 0 1em 0 0; padding: 0; font-size: 11px; font-weight: bold; letter-spacing: 0; border-bottom: none; line-height: 1.6em; }
-		.pitch-pattern p											{ font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 11px; flex: 1 0 auto; margin: 0; }
-		.pitch-diagram												{ margin: 0; display: block; }
-		.pitch-pattern + .pitch-diagram								{ margin-top: 0.6em; }
-		${Object.values(patternObj)
-			.map(({ color, cssClass }) => `.${cssClass} { color: ${color}; }`)
-			.join("")}`;
-		document.head.appendChild(style);
-	}
+        let parsedPitchInfo = [];
+        if (wordTypes.length > 0) {
+          const wordTypeToPitch = wordTypes.map((w) => {
+            const regexInner = new RegExp(`${w}[^\\)]*\\)([\\d,]+)`, 'g');
+            let matchInner;
+            const matchesInner = [];
+            while ((matchInner = regexInner.exec(pitchInfo)) !== null) matchesInner.push(matchInner[1]);
+            return [
+              w,
+              matchesInner.join('')
+              .split(',')
+              .filter((p) => p)
+              .map((p) => parseInt(p))
+            ];
+          });
+          appendPitchPatternInfo(pReading, pitchByWordTypeToInfoElements(wordTypeToPitch, card.characters, reading));
+
+          const matchesDigits = [];
+          const regexDigits = /\d/g;
+          while ((match = regexDigits.exec(pitchInfo)) !== null) matchesDigits.push(match[0]);
+          parsedPitchInfo = [...new Set(matchesDigits.map((r) => r))].map((p) => parseInt(p));
+        } else {
+          parsedPitchInfo = pitchInfo.split(',').map((p) => parseInt(p));
+          appendPitchPatternInfo(
+            pReading,
+            pitchToInfoElements(
+              parsedPitchInfo,
+              card.characters,
+              reading
+            )
+          );
+        }
+        const diagrams = parsedPitchInfo.map((p) => drawPitchDiagram(p, reading));
+        pReading.before(...diagrams);
+        makeMonospaced(pReading.childNodes[0]);
+      });
+    };
+    injectPitchInfo();
+  }
+}
+</script>
+
+<!-- Show Level/Link & Play Audio -->
+<script>
+{
+  const level = document.getElementById('level');
+  level.style.display = 'inline';
+
+  const link = document.getElementById('wk-link');
+  link.style.display = 'inline';
+
+  const autoPlay = preferences.autoPlayAudio.toLowerCase().trim();
+  const audioContainer = document.getElementById('reading-audios');
+
+  if (autoPlay && audioContainer) {
+    const audios = audioContainer.querySelectorAll('.replay-button');
+    const female = audios[0];
+    const male = audios[1];
+
+    switch (autoPlay) {
+      case 'female':
+        if (female) female.click();
+        break;
+      case 'male':
+        if (male) male.click();
+        break;
+      case 'both':
+        if (female) female.click();
+        if (male) setTimeout(() => male.click(), 1000);
+        break;
+    }
+  }
+}
 </script>
