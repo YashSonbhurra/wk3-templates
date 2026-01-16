@@ -1,4 +1,3 @@
-
 {{FrontSide}}
 
 <!--
@@ -334,7 +333,7 @@ Sections get turned off based on which Card Type is displayed.
 <!--SCRIPT: Add Phonetic-Semantic Composition Characters.-->
 <script>
 {
-  if (`{{Card_Type}}` === 'Kanji' || `{{Card_Type}}` === 'Radical') {
+  if (preferences.keisei && (card.type === 'Kanji' || card.type === 'Radical')) {
     const sections = `{{Keisei}}`;
     const sectionarray = sections.split(' | ');
     let start = 1;
@@ -343,9 +342,9 @@ Sections get turned off based on which Card Type is displayed.
 
     if (data[0] === 'compound' || data[0] === 'phonetic') {
       if (data[0] === 'compound') {
-        description.innerHTML = `The {{Card_Type}} 「<ja>{{Characters}}</ja>」 was created using semantic-phonetic composition!<br><br>The phonetic component is 「<ja>${data[2]}</ja>」 with the On'yomi readings 「<ja>${data[3]}</ja>」 (including rare ones), and the semantic component is 「<ja>${data[4]}</ja>」.<br>`;
+        description.innerHTML = `The ${card.type} 「<ja>${card.characters}</ja>」 was created using semantic-phonetic composition!<br><br>The phonetic component is 「<ja>${data[2]}</ja>」 with the On'yomi readings 「<ja>${data[3]}</ja>」 (including rare ones), and the semantic component is 「<ja>${data[4]}</ja>」.<br>`;
       } else if (data[0] === 'phonetic') {
-        description.innerHTML = `The {{Card_Type}} 「<ja>{{Characters}}</ja>」 is used as a phonetic component in other compounds! Its On'yomi readings are 「<ja>${data[3]}</ja>」.<br>`;
+        description.innerHTML = `The ${card.type} 「<ja>${card.characters}</ja>」 is used as a phonetic component in other compounds! Its On'yomi readings are 「<ja>${data[3]}</ja>」.<br>`;
       }
 
       const divPhonetic = document.getElementById('phonetic-container');
@@ -356,7 +355,7 @@ Sections get turned off based on which Card Type is displayed.
       if (data[1].includes('R')) {
         element = document.createElement('div');
         element.innerHTML = `<div id=radical-character>${data[2]}<div id=box-meaning>${data[3].split('・')[0]}<br>${sectionarray[start]}</div></div>`;
-        element.addEventListener('click', () => openWK('radicals', sectionarray[1]));
+        addWKListener(element, 'radicals', sectionarray[1]);
         divPhonetic.appendChild(element);
         start += 1;
       }
@@ -364,7 +363,7 @@ Sections get turned off based on which Card Type is displayed.
       if (data[1].includes('K')) {
         element = document.createElement('div');
         element.innerHTML = `<div id=box-character>${data[2]}<div id=box-meaning>${sectionarray[start].split(', ')[1]}<br>${sectionarray[start].split(', ')[0]}</div></div>`;
-        element.addEventListener('click', () => openWK('kanji', data[2]));
+        addWKListener(element, 'kanji', data[2]);
         divPhonetic.appendChild(element);
         start += 1;
       }
@@ -374,17 +373,17 @@ Sections get turned off based on which Card Type is displayed.
         const parts = sectionarray[i].split(', ');
         element = document.createElement('div');
         element.innerHTML = `<div id=box-character>${parts[0]}<div id=box-meaning>${parts[1]}<br>${parts[2]}</div></div>`;
-        if (parts[1] !== '-') element.addEventListener('click', () => openWK('kanji', parts[0]));
+        if (parts[1] !== '-') addWKListener(element, 'kanji', parts[0]);
         divCompound.appendChild(element);
       }
     } else if (data[0] === 'unprocessed') {
-      description.innerHTML = `The {{Card_Type}} 「<ja>{{Characters}}</ja>」 has not been added to the WK Userscripts Keisei DB yet, please wait for a future version.<br>`;
+      description.innerHTML = `The ${card.type} 「<ja>${card.characters}</ja>」 has not been added to the WK Userscripts Keisei DB yet, please wait for a future version.<br>`;
     } else if (data[0] === 'nonradical') {
-      description.innerHTML = `The {{Card_Type}} 「<ja>{{Characters}}</ja>」 is not considered a phonetic mark!<br>`;
+      description.innerHTML = `The ${card.type} 「<ja>${card.characters}</ja>」 is not considered a phonetic mark!<br>`;
     } else if (data[0] === 'unknown') {
-      description.innerHTML = `The {{Card_Type}} 「<ja>{{Characters}}</ja>」 has an unknown or contested origin, or its phonetic mark is too obscure to be useful. Stay tuned for more information in future versions of WK Userscripts Keisei.`;
+      description.innerHTML = `The ${card.type} 「<ja>${card.characters}</ja>」 has an unknown or contested origin, or its phonetic mark is too obscure to be useful. Stay tuned for more information in future versions of WK Userscripts Keisei.`;
     } else {
-      description.innerHTML = `The {{Card_Type}} 「<ja>{{Characters}}</ja>」 is not considered a semantic-phonetic composition.<br>Note: {{Keisei}}<br>`;
+      description.innerHTML = `The ${card.type} 「<ja>${card.characters}</ja>」 is not considered a semantic-phonetic composition.<br>Note: {{Keisei}}<br>`;
     }
   } else {
     const section = document.getElementById('section-phonetic-semantic');
