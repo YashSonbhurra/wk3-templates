@@ -1,4 +1,3 @@
-
 {{FrontSide}}
 
 <!--
@@ -10,7 +9,7 @@ Sections get turned off based on which Card Type is displayed.
 
 <!-- Correct Answers Section -->
 <!--For: Radical, Kanji, Vocabulary-->
-<div>
+<div id=correct-answers>
 	<br>Correct Answers<hr>
 	<p id="correct"></p>
 </div>
@@ -398,6 +397,9 @@ Sections get turned off based on which Card Type is displayed.
         correctText.innerHTML = items.join(' ');
       }
     }
+  } else {
+    const section = document.getElementById('correct-answers');
+    section.style.display = 'none';
   }
 }
 </script>
