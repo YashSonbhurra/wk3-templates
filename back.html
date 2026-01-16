@@ -125,9 +125,12 @@ Sections get turned off based on which Card Type is displayed.
 <script>
 {
   if (card.type === 'Kana_Vocabulary') {
-    const audioDiv = document.getElementById('reading-audios');
-    document.getElementsByClassName('explanation')[0].before(audioDiv);
-    document.getElementsByClassName('explanation')[1].style.display = 'none';
+    if (preferences.pitchAccent) {
+      document.getElementsByClassName('explanation')[1].style.display = 'none';
+    } else {
+      const audioDiv = document.getElementById('reading-audios');
+      document.getElementsByClassName('explanation')[0].before(audioDiv);
+    }
   }
 
   const disable_reading_div = (id, readings) => {
@@ -483,8 +486,7 @@ Sections get turned off based on which Card Type is displayed.
 <script>
 {
   if (preferences.pitchAccent && (card.type === 'Vocabulary' || card.type === 'Kana_Vocabulary')) {
-    const readings = parseList(card.readingWhitelist.join(','));
-
+    const readings = parseList(`{{Reading}}`);
     const readingsContainer = document.createElement('div');
     readingsContainer.id = 'vocabulary-readings-container';
 
@@ -506,7 +508,7 @@ Sections get turned off based on which Card Type is displayed.
     const SQUASH_DIGRAPHS = false;
     const DOT_RADIUS = 0.2;
     const STROKE_WIDTH = 0.1;
-    const WEB_URL = 'http://www.gavo.t.u-tokyo.ac.jp/ojad/search/index/curve:fujisaki/word:%s';
+    const WEB_URL = 'https://www.gavo.t.u-tokyo.ac.jp/ojad/search/index/curve:fujisaki/word:%s';
 
     const digraphs = 'ぁぃぅぇぉゃゅょゎゕゖァィゥェォャュョヮヵヶ';
     let pitchLookup = null;
