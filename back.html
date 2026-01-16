@@ -1,3 +1,4 @@
+
 {{FrontSide}}
 
 <!--
@@ -90,7 +91,7 @@ Sections get turned off based on which Card Type is displayed.
 <script>
 {
   let title = 'Meaning<hr>';
-  if (`{{Card_Type}}` === 'Radical') title = 'Name<hr>';
+  if (card.type === 'Radical') title = 'Name<hr>';
   const div = document.getElementById('meaning-title');
   let element = document.createElement('p');
   element.innerHTML = title;
@@ -124,7 +125,9 @@ Sections get turned off based on which Card Type is displayed.
 <!--SCRIPT: Disable unused Reading divisions.-->
 <script>
 {
-  if (`{{Card_Type}}` === 'Kana_Vocabulary') {
+  if (card.type === 'Kana_Vocabulary') {
+    const audioDiv = document.getElementById('reading-audios');
+    document.getElementsByClassName('explanation')[0].before(audioDiv);
     document.getElementsByClassName('explanation')[1].style.display = 'none';
   }
 
@@ -214,7 +217,7 @@ Sections get turned off based on which Card Type is displayed.
 <!--SCRIPT: Slice and add context sentences.-->
 <script>
 {
-  if (`{{Card_Type}}` === 'Vocabulary' || `{{Card_Type}}` === 'Kana_Vocabulary') {
+  if (card.type === 'Vocabulary' || card.type === 'Kana_Vocabulary') {
     const sentences = `{{Context_Sentences}}`;
     const array = sentences.split('|');
     const div = document.getElementById('context-sentences');
@@ -243,20 +246,20 @@ Sections get turned off based on which Card Type is displayed.
   const combinationsection = document.getElementById('section-radical-combination');
   const foundinvocabularysection = document.getElementById('section-found-in-vocabulary');
 
-  if (`{{Card_Type}}` === 'Radical') {
+  if (card.type === 'Radical') {
     readingsection.style.display = 'none';
     contextsection.style.display = 'none';
     combinationsection.style.display = 'none';
     foundinvocabularysection.style.display = 'none';
   }
-  if (`{{Card_Type}}` === 'Kanji') {
+  if (card.type === 'Kanji') {
     contextsection.style.display = 'none';
   }
-  if (`{{Card_Type}}` === 'Vocabulary') {
+  if (card.type === 'Vocabulary') {
     combinationsection.style.display = 'none';
     foundinvocabularysection.style.display = 'none';
   }
-  if (`{{Card_Type}}` === 'Kana_Vocabulary') {
+  if (card.type === 'Kana_Vocabulary') {
     readingsection.style.display = 'none';
     combinationsection.style.display = 'none';
     foundinvocabularysection.style.display = 'none';
@@ -268,69 +271,48 @@ Sections get turned off based on which Card Type is displayed.
 <!--SCRIPT: Populate Box Characters (Found in Kanji, Visually Similar Kanji and Kanji Composition).-->
 <script>
 {
-  if (`{{Card_Type}}` === 'Radical') {
-    const character = `{{Found_in_Characters}}`;
-    const characterarray = character.split(', ');
-    const meaning = `{{Found_in_Meaning}}`;
-    const meaningarray = meaning.split(', ');
-    const reading = `{{Found_in_Reading}}`;
-    const readingarray = reading.split(', ');
-
-    if (character.toString().length !== 0) {
+  if (card.type === 'Radical') {
+    if (card.foundIn.characters.length !== 0) {
       const div = document.getElementById('box-title');
       const element = document.createElement('div');
       element.innerHTML = 'Found In Kanji<hr>';
       div.appendChild(element);
 
-      for (let i = 0; i < characterarray.length; i++) {
+      for (let i = 0; i < card.foundIn.characters.length; i++) {
         const divContainer = document.getElementById('box-container');
         const elementContainer = document.createElement('div');
-        elementContainer.innerHTML = `<div id=box-character>${characterarray[i]}<div id=box-meaning>${readingarray[i]}<br>${meaningarray[i]}</div></div>`;
-        elementContainer.addEventListener('click', () => openWK('kanji', characterarray[i]));
+        elementContainer.innerHTML = `<div id=box-character>${card.foundIn.characters[i]}<div id=box-meaning>${card.foundIn.readings[i]}<br>${card.foundIn.meanings[i]}</div></div>`;
+        addWKListener(elementContainer, 'kanji', card.foundIn.characters[i]);
         divContainer.appendChild(elementContainer);
       }
     }
-  } else if (`{{Card_Type}}` === 'Kanji') {
-    const character = `{{Similar_Characters}}`;
-    const characterarray = character.split(', ');
-    const meaning = `{{Similar_Meaning}}`;
-    const meaningarray = meaning.split(', ');
-    const reading = `{{Similar_Reading}}`;
-    const readingarray = reading.split(', ');
-
-    if (character.toString().length !== 0) {
+  } else if (card.type === 'Kanji') {
+    if (card.similar.characters.length !== 0) {
       const div = document.getElementById('box-title');
       const element = document.createElement('div');
       element.innerHTML = 'Visually Similar Kanji<hr>';
       div.appendChild(element);
 
-      for (let i = 0; i < characterarray.length; i++) {
+      for (let i = 0; i < card.similar.characters.length; i++) {
         const divContainer = document.getElementById('box-container');
         const elementContainer = document.createElement('div');
-        elementContainer.innerHTML = `<div id=box-character>${characterarray[i]}<div id=box-meaning>${readingarray[i]}<br>${meaningarray[i].toString().substring(0, 15)}</div></div>`;
-        elementContainer.addEventListener('click', () => openWK('kanji', characterarray[i]));
+        elementContainer.innerHTML = `<div id=box-character>${card.similar.characters[i]}<div id=box-meaning>${card.similar.readings[i]}<br>${card.similar.meanings[i].toString().substring(0, 15)}</div></div>`;
+        addWKListener(elementContainer, 'kanji', card.similar.characters[i]);
         divContainer.appendChild(elementContainer);
       }
     }
-  } else if (`{{Card_Type}}` === 'Vocabulary') {
-    const character = `{{Components_Characters}}`;
-    const characterarray = character.split(', ');
-    const meaning = `{{Components_Meaning}}`;
-    const meaningarray = meaning.split(', ');
-    const reading = `{{Components_Reading}}`;
-    const readingarray = reading.split(', ');
-
-    if (character.toString().length !== 0) {
+  } else if (card.type === 'Vocabulary') {
+    if (card.components.characters.length !== 0) {
       const div = document.getElementById('box-title');
       const element = document.createElement('div');
       element.innerHTML = 'Kanji Composition<hr>';
       div.appendChild(element);
 
-      for (let i = 0; i < characterarray.length; i++) {
+      for (let i = 0; i < card.components.characters.length; i++) {
         const divContainer = document.getElementById('box-container');
         const elementContainer = document.createElement('div');
-        elementContainer.innerHTML = `<div id=box-character>${characterarray[i]}<div id=box-meaning>${readingarray[i]}<br>${meaningarray[i].toString().substring(0, 15)}</div></div>`;
-        elementContainer.addEventListener('click', () => openWK('kanji', characterarray[i]));
+        elementContainer.innerHTML = `<div id=box-character>${card.components.characters[i]}<div id=box-meaning>${card.components.readings[i]}<br>${card.components.meanings[i].toString().substring(0, 15)}</div></div>`;
+        addWKListener(elementContainer, 'kanji', card.components.characters[i]);
         divContainer.appendChild(elementContainer);
       }
     }
@@ -341,21 +323,16 @@ Sections get turned off based on which Card Type is displayed.
 <!--SCRIPT: Add Radical Combination Characters.-->
 <script>
 {
-  if (`{{Card_Type}}` === 'Kanji') {
-    const character = `{{Components_Characters}}`;
-    const characterarray = character.split(', ');
-    const meaning = `{{Components_Meaning}}`;
-    const meaningarray = meaning.split(', ');
-
-    for (let i = 0; i < meaningarray.length; i++) {
+  if (card.type === 'Kanji') {
+    for (let i = 0; i < card.components.meanings.length; i++) {
       const div = document.getElementById('combination');
       const element = document.createElement('div');
 
-      element.innerHTML = `<radical-combination>${characterarray[i]}</radical-combination>${meaningarray[i].toString().substring(0, 15)}`;
-      element.addEventListener('click', () => openWK('radicals', meaningarray[i]));
+      element.innerHTML = `<radical-combination>${card.components.characters[i]}</radical-combination>${card.components.meanings[i].toString().substring(0, 15)}`;
+      addWKListener(element, 'radicals', card.components.meanings[i]);
       div.appendChild(element);
 
-      if (i + 1 !== characterarray.length) {
+      if (i + 1 !== card.components.characters.length) {
         const elementPlus = document.createElement('p');
         elementPlus.innerHTML = '<div class=combination-plus><b>+</b></div>';
         div.appendChild(elementPlus);
@@ -368,23 +345,16 @@ Sections get turned off based on which Card Type is displayed.
 <!--SCRIPT: Add Found in Vocabulary Characters.-->
 <script>
 {
-  if (`{{Card_Type}}` === 'Kanji') {
-    const character = `{{Found_in_Characters}}`;
-    const characterarray = character.split(', ');
-    const meaning = `{{Found_in_Meaning}}`;
-    const meaningarray = meaning.split(', ');
-    const reading = `{{Found_in_Reading}}`;
-    const readingarray = reading.split(', ');
-
-    for (let i = 0; i < characterarray.length; i++) {
+  if (card.type === 'Kanji') {
+    for (let i = 0; i < card.foundIn.characters.length; i++) {
       const div = document.getElementById('found-in-vocabulary-container');
       const element = document.createElement('div');
-      element.innerHTML = `<div id=found-in-vocabulary-box><div class=found-in-voc>${characterarray[i]}</div><div class=found-in-voc-reading>${readingarray[i]}<br>${meaningarray[i]}</div></div>`;
-      element.addEventListener('click', () => openWK('vocabulary', characterarray[i]));
+      element.innerHTML = `<div id=found-in-vocabulary-box><div class=found-in-voc>${card.foundIn.characters[i]}</div><div class=found-in-voc-reading>${card.foundIn.readings[i]}<br>${card.foundIn.meanings[i]}</div></div>`;
+      addWKListener(element, 'vocabulary', card.foundIn.characters[i]);
       div.appendChild(element);
     }
 
-    if (character.toString().length === 0) {
+    if (card.foundIn.characters.length === 0) {
       const foundinvocabularysection = document.getElementById('section-found-in-vocabulary');
       foundinvocabularysection.style.display = 'none';
     }
@@ -406,36 +376,29 @@ Sections get turned off based on which Card Type is displayed.
           if (e.innerHTML === '-' || e.innerHTML === ' ') return;
           mainInput += e.innerHTML;
         });
-        if (`{{Card}}` === 'Reading') {
-          mainInput = wanakana.toHiragana(mainInput + ' ', { IMEMode: true }).trim();
+        if (card.face === 'Reading') {
+          mainInput = wanakana.toHiragana(`${mainInput} `, { IMEMode: true }).trim();
         }
       }
     }
-    const mainAnswer = mainInput.toLowerCase().replace(/'/g, '');
-
-    const meaningWhitelist = `{{Meaning_Whitelist}}`.split(',')
-      .map(item => item.trim().toLowerCase().replace(/'/g, ''))
-      .filter(Boolean);
-    const readingWhitelist = `{{Reading_Whitelist}}`.split(',')
-      .map(item => item.trim().toLowerCase())
-      .filter(Boolean);
+    const mainAnswer = sanitizeInput(mainInput);
 
     let correctAnswers = [];
-    if (`{{Card}}` === 'Meaning') {
-      correctAnswers = meaningWhitelist;
-    } else if (`{{Card}}` === 'Reading') {
-      correctAnswers = readingWhitelist;
+    if (card.face === 'Meaning') {
+      correctAnswers = card.meaningWhitelist;
+    } else if (card.face === 'Reading') {
+      correctAnswers = card.readingWhitelist;
     }
 
     const mainAnswerDiv = document.createElement('div');
     mainAnswerDiv.classList.add('answer-display');
     mainAnswerDiv.innerText = mainInput;
-    if (`{{Card}}` === 'Reading') {
+    if (card.face === 'Reading') {
       mainAnswerDiv.style.fontFamily = 'Hiragino Kaku Gothic Pro W3';
     }
 
-    const mainAnswers = window.preferences.allowMultipleAnswers
-      ? mainAnswer.split(/,|、/).map(item => item.trim())
+    const mainAnswers = preferences.allowMultipleAnswers
+      ? parseList(mainAnswer)
       : [mainAnswer];
     let mainIncorrect = [];
 
@@ -456,21 +419,21 @@ Sections get turned off based on which Card Type is displayed.
 
     if (optionalDiv) {
       const optionalInput = (sessionStorage.getItem('optionalAnswer') || '').trim();
-      const optionalAnswer = optionalInput.toLowerCase().replace(/'/g, '');
+      const optionalAnswer = sanitizeInput(optionalInput);
 
       const optionalAnswerDiv = document.createElement('div');
       optionalAnswerDiv.classList.add('answer-display');
       optionalAnswerDiv.innerText = optionalInput;
 
-      const optionalAnswers = window.preferences.allowMultipleAnswers
-        ? optionalAnswer.split(/,|、/).map(item => item.trim())
+      const optionalAnswers = preferences.allowMultipleAnswers
+        ? parseList(optionalAnswer)
         : [optionalAnswer];
 
       if (optionalInput === '') {
         optionalAnswerDiv.style.display = 'none';
-      } else if (optionalAnswers.some(ans => meaningWhitelist.includes(ans))) {
+      } else if (optionalAnswers.some(ans => card.meaningWhitelist.includes(ans))) {
         optionalAnswerDiv.classList.add('correct');
-        optionalIncorrect = optionalAnswers.filter(ans => !meaningWhitelist.includes(ans));
+        optionalIncorrect = optionalAnswers.filter(ans => !card.meaningWhitelist.includes(ans));
       } else {
         optionalAnswerDiv.classList.add('incorrect');
       }
@@ -482,7 +445,7 @@ Sections get turned off based on which Card Type is displayed.
     if (mainIncorrect.length > 0 || optionalIncorrect.length > 0) {
       let msg = '';
       if (mainIncorrect.length > 0) {
-        msg += `Wrong {{Card}}: ${mainIncorrect.join(', ')}`;
+        msg += `Wrong ${card.face}: ${mainIncorrect.join(', ')}`;
       }
       if (mainIncorrect.length > 0 && optionalIncorrect.length > 0) {
         msg += '\n';
@@ -526,23 +489,24 @@ Sections get turned off based on which Card Type is displayed.
   const link = document.getElementById('wk-link');
   link.style.display = 'inline';
 
-  const autoPlay = window.preferences.autoPlayAudio;
+  const autoPlay = preferences.autoPlayAudio.toLowerCase().trim();
   const audioContainer = document.getElementById('reading-audios');
 
-  if (audioContainer) {
-    const female = audioContainer.querySelector(':first-child');
-    const male = audioContainer.querySelector(':nth-child(2)');
+  if (autoPlay && audioContainer) {
+    const audios = audioContainer.querySelectorAll('.replay-button');
+    const female = audios[0];
+    const male = audios[1];
 
     switch (autoPlay) {
-      case 'Female':
+      case 'female':
         if (female) female.click();
         break;
-      case 'Male':
+      case 'male':
         if (male) male.click();
         break;
-      case 'Both':
+      case 'both':
         if (female) female.click();
-        if (male) male.click();
+        if (male) setTimeout(() => male.click(), 1000);
         break;
     }
   }
