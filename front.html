@@ -110,7 +110,7 @@ function detectTypeMismatch(inputField) {
 
   const cardFace = isOptional ? 'Meaning' : card.face;
   if (cardFace === 'Meaning') {
-    if (!card.meaningWhitelist.includes(input)) {
+    if (card.meaningWhitelist.indexOf(input) === -1) {
       if (card.type === 'Radical') {
         const idx = card.foundIn.characters.indexOf(card.characters);
         if (idx !== -1 && sanitizeInput(card.foundIn.meanings[idx]) === input) {
@@ -139,7 +139,7 @@ function detectTypeMismatch(inputField) {
     }
   } else if (cardFace === 'Reading') {
     inputField.value = input;
-    if (!card.readingWhitelist.includes(input)) {
+    if (card.readingWhitelist.indexOf(input) === -1) {
       if (card.type === 'Kanji') {
         const onyomiReading = `{{Reading_Onyomi}}`;
         const kunyomiReading = `{{Reading_Kunyomi}}`;
@@ -158,7 +158,7 @@ function detectTypeMismatch(inputField) {
 
         const otherReadingsList = parseList(otherReading, true);
 
-        if (otherReadingsList.includes(input)) {
+        if (otherReadingsList.indexOf(input) !== -1) {
           showToast(`WK3 is looking for the ${wantedReading} reading.`);
           return false;
         }
